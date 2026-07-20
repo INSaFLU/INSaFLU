@@ -469,18 +469,6 @@ class DefaultParameters(object):
                 televir_project=televir_project,
             )
 
-        elif self.check_software_with_duplicates(software_name):
-            software = self.get_software_global(
-                user,
-                software_name,
-                technology_name,
-                type_of_use,
-                televir_project=televir_project,
-                is_to_run=is_to_run,
-                name_extended=software_name_extended,
-                project=project,
-                project_sample=project_sample,
-            )
         else:
             software = self.get_software_global(
                 user,
@@ -491,6 +479,7 @@ class DefaultParameters(object):
                 is_to_run=is_to_run,
                 name_extended=software_name_extended,
                 project=project,
+                project_sample=project_sample,
             )
 
         return software
@@ -1521,10 +1510,6 @@ class DefaultParameters(object):
 
         else:
             return None
-
-    def check_software_with_duplicates(self, software_name):
-        """return true if software is in duplocate_list"""
-        return software_name in SoftwareNames.duplicate_softwares
 
     def check_software_is_polyvalent(self, software_name):
         """return True if the software is polyvalent"""

@@ -84,13 +84,13 @@ class PIMetagenSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
             ),
             (
                 self.kwargs["sample_name"],
-                reverse("PIproject_sample", kwargs={"pk": self.kwargs["sample_id"]}),
+                reverse("PIproject_samples", kwargs={"pk": self.kwargs["sample_id"]}),
             ),
             (
                 "References Management",
                 reverse(
                     "sample_references_management",
-                    kwargs={"pk": self.kwargs["sample_id"]},
+                    kwargs={"pk1": self.kwargs["sample_id"]},
                 ),
             ),
         ]
@@ -1171,7 +1171,10 @@ class UpdateParametersProjView(BaseBreadcrumbMixin, LoginRequiredMixin, UpdateVi
         return [
             ("Project Index", reverse("project-index")),
             ("Projects", reverse("projects")),
-            ("Project settings", reverse("project-settings", self.kwargs["pk_proj"])),
+            (
+                "Project settings",
+                reverse("project-settings", kwargs={"pk": self.kwargs["pk_proj"]}),
+            ),
             ("Update parameters", reverse("software-update", kwargs={"pk": self.kwargs["pk"]})),
         ]
 
@@ -1281,7 +1284,7 @@ class UpdateParametersDatasetView(BaseBreadcrumbMixin, LoginRequiredMixin, Updat
             ("Projects", reverse("projects")),
             (
                 "Datasets",
-                reverse("dataset-settings", self.kwargs["pk_dataset"]),
+                reverse("dataset-settings", kwargs={"pk": self.kwargs["pk_dataset"]}),
             ),
         ]
 
@@ -1428,21 +1431,25 @@ class UpdateParametersProjSampleView(
 
     @cached_property
     def crumbs(self):
-        return (
-            [
-                ("Project Index", reverse("project-index")),
-                ("Projects", reverse("projects")),
-                (
-                    "Show project results",
-                    reverse(
-                        "show-sample-project-results",
-                        kwargs={"pk": self.kwargs["pk_proj_sample"]},
-                    ),
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Show project results",
+                reverse(
+                    "show-sample-project-results",
+                    kwargs={"pk": self.kwargs["pk_proj_sample"]},
                 ),
-                ("Project sample settings", reverse("sample-project-settings")),
-                ("Update parameters", reverse("software-update", kwargs={"pk": self.kwargs["pk"]})),
-            ],
-        )
+            ),
+            (
+                "Project sample settings",
+                reverse(
+                    "sample-project-settings",
+                    kwargs={"pk": self.kwargs["pk_proj_sample"]},
+                ),
+            ),
+            ("Update parameters", reverse("software-update", kwargs={"pk": self.kwargs["pk"]})),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1
@@ -1595,21 +1602,19 @@ class UpdateParametersSampleView(BaseBreadcrumbMixin, LoginRequiredMixin, Update
 
     @cached_property
     def crumbs(self):
-        return (
-            [
-                ("Project Index", reverse("project-index")),
-                ("Projects", reverse("projects")),
-                (
-                    "Show project results",
-                    reverse(
-                        "show-sample-project-results",
-                        kwargs={"pk": self.kwargs["pk_sample"]},
-                    ),
+        return [
+            ("Project Index", reverse("project-index")),
+            ("Projects", reverse("projects")),
+            (
+                "Show project results",
+                reverse(
+                    "show-sample-project-results",
+                    kwargs={"pk": self.kwargs["pk_sample"]},
                 ),
-                ("Project sample settings", reverse("sample-project-settings", kwargs={"pk": self.kwargs["pk_sample"]})),
-                ("Update parameters", reverse("software-update", kwargs={"pk" : self.kwargs["pk"]})),
-            ],
-        )
+            ),
+            ("Project sample settings", reverse("sample-project-settings", kwargs={"pk": self.kwargs["pk_sample"]})),
+            ("Update parameters", reverse("software-update", kwargs={"pk" : self.kwargs["pk"]})),
+        ]
 
     ## Other solution to get the reference
     ## https://pypi.python.org/pypi?%3aaction=display&name=django-contrib-requestprovider&version=1.0.1

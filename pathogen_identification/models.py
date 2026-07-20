@@ -1630,7 +1630,14 @@ class TelefluMapping(models.Model):
                 )
                 sample_summary[sample.name]['bam_file'] = PathUtils.media_path_serve(reports[0].bam_path)
                 sample_summary[sample.name]['bam_file_idx'] = PathUtils.media_path_serve(reports[0].bai_path)
-                sample_summary[sample.name]['run_link'] = reverse("run_detail", kwargs={"run_id": report.run.pk})
+                sample_summary[sample.name]['run_link'] = reverse(
+                    "sample_detail",
+                    kwargs={
+                        "pk1": sample.project.pk,
+                        "pk2": sample.pk,
+                        "pk3": report.run.pk,
+                    },
+                )
 
         return sample_summary, mapped_samples, success_samples
 

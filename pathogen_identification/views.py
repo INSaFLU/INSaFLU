@@ -2118,7 +2118,7 @@ class UploadReferencePanel(
     def crumbs(self):
         return [
             ("References Index", reverse("references-index")),
-            ("Manage Project References", "televir_reference_files"),
+            ("Manage Project References", reverse("televir_reference_files")),
             ("Upload Reference Panel", ""),
         ]
 

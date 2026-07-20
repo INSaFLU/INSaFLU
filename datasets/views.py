@@ -130,7 +130,10 @@ class AddDatasetsReferencesView(
     def crumbs(self):
         return [
             ("Datasets", reverse("datasets")),
-            ("Add references to dataset", "add-references-dataset"),
+            (
+                "Add references to dataset",
+                reverse("add-references-dataset", kwargs={"pk": self.kwargs["pk"]}),
+            ),
         ]
 
     if settings.DEBUG:
@@ -991,7 +994,10 @@ class UploadNewConsensusView(
                 "Add Consensus to dataset",
                 reverse("add-consensus-dataset", kwargs={"pk": self.kwargs.get("pk")}),
             ),
-            ("Upload new consensus", "upload-new-consensus"),
+            (
+                "Upload new consensus",
+                reverse("upload-new-consensus", kwargs={"pk": self.kwargs.get("pk")}),
+            ),
         ]
 
     ## Other solution to get the Consensus
@@ -1722,7 +1728,10 @@ class DatasetsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 "Settings",
                 reverse("settings"),
             ),
-            ("Update parameters", reverse("software-update")),
+            (
+                "Update parameters",
+                reverse("dataset-settings", kwargs={"pk": self.kwargs["pk"]}),
+            ),
         ]
 
     def get_context_data(self, **kwargs):

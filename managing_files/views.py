@@ -3489,6 +3489,14 @@ class SampleProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListVi
 
     add_home = True
 
+    def setup(self, request, *args, **kwargs):
+        super(SampleProjectsSettingsView, self).setup(request, *args, **kwargs)
+        try:
+            project_sample = ProjectSample.objects.get(pk=self.kwargs["pk"])
+            self.kwargs["project_id"] = project_sample.project.pk
+        except ProjectSample.DoesNotExist:
+            self.kwargs["project_id"] = -1
+
     @cached_property
     def crumbs(self):
         return [
@@ -3497,7 +3505,8 @@ class SampleProjectsSettingsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListVi
             (
                 "Show project results",
                 reverse(
-                    "show-sample-project-results", kwargs={"pk": self.kwargs["pk"]}
+                    "show-sample-project-results",
+                    kwargs={"pk": self.kwargs["project_id"]},
                 ),
             ),
             (
@@ -3704,7 +3713,13 @@ class ShowSampleProjectsDetailsView(BaseBreadcrumbMixin, LoginRequiredMixin, Lis
                     kwargs={"pk": self.kwargs["project_id"]},
                 ),
             ),
-            ("Show sample detail results", "show-sample-project-single-detail"),
+            (
+                "Show sample detail results",
+                reverse(
+                    "show-sample-project-single-detail",
+                    kwargs={"pk": self.kwargs["pk"]},
+                ),
+            ),
         ]
 
     def setup(self, request, *args, **kwargs):

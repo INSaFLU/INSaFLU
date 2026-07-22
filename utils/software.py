@@ -4287,7 +4287,11 @@ class Software(object):
             raise Exception("MDCG software not found.")
 
         ######## BEGIN
-        os.chdir("/tmp/insaFlu/")
+        temp_dir = os.path.join(
+            Constants.TEMP_DIRECTORY, Constants.COUNT_DNA_TEMP_DIRECTORY
+        )
+        os.makedirs(temp_dir, exist_ok=True)
+        os.chdir(temp_dir)
 
         try:
             ## process snippy
@@ -5278,6 +5282,7 @@ class Software(object):
             + "/* "
             + temp_dir
         )
+        print("Running command: " + cmd)
         exit_status = os.system(cmd)
         if exit_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -5292,10 +5297,12 @@ class Software(object):
             )
 
         # Copy the setup folder and alignment and metadata files to the appropriate place in the temp folder
-        self.utils.copy_file(
-            alignments, os.path.join(temp_dir, "data", "sequences.fasta")
-        )
+        # This copy is not needed as it is generated afterwards
+        #self.utils.copy_file(
+        #    alignments, os.path.join(temp_dir, "data", "sequences.fasta")
+        #)
         self.utils.copy_file(metadata, os.path.join(temp_dir, "data", "metadata.tsv"))
+        print("Copying "+metadata+" to "+os.path.join(temp_dir, "data", "metadata.tsv"))
 
         # Copy the build-specific config file to the appropriate place in the temp folder
         config_file = os.path.join(
@@ -5307,6 +5314,7 @@ class Software(object):
         self.utils.copy_file(
             config_file, os.path.join(temp_dir, "config", "config.yaml")
         )
+        print("Copying "+config_file+" to "+os.path.join(temp_dir, "config", "config.yaml"))
 
         # to generate the include: may need to remove "" from the names...
         cmd = (
@@ -5315,6 +5323,7 @@ class Software(object):
             + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > "
             + os.path.join(temp_dir, "data", "include.txt")
         )
+        print("Running command: " + cmd)
         exit_status = os.system(cmd)
         if exit_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -5331,6 +5340,7 @@ class Software(object):
         cmd = "cat {} >> {}".format(
             reference_fasta, os.path.join(temp_dir, "data", "sequences.fasta")
         )
+        print("Running command: " + cmd)
         exit_status = os.system(cmd)
         if exit_status != 0:
             self.utils.remove_dir(temp_dir)
@@ -5361,7 +5371,7 @@ class Software(object):
                 + temp_dir
                 + "/config/config.yaml"
             )
-
+        print("Running command: " + cmd)
         exit_status = os.system(cmd)
         if exit_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -5426,6 +5436,7 @@ class Software(object):
 
         # Note this only works for now, IF the metadata entry is the last row (because the columns won't match...)
         self.utils.copy_file(metadata, os.path.join(temp_dir, "data", "metadata.tsv"))
+
         # cmd = "cat {} {} > {}".format(metadata, os.path.join(temp_dir, 'data', 'references_metadata.tsv'), os.path.join(temp_dir, 'data', 'metadata.tsv'))
         # exit_status = os.system(cmd)
         # if (exit_status != 0):
@@ -5437,8 +5448,8 @@ class Software(object):
             "cat "
             + metadata
             + " | cut -f 1 | sed 's/\"//g' | tail -n +2 > "
-            # + os.path.join(temp_dir, "data", "include.txt")
-            + os.path.join(temp_dir, "defaults", "include.txt")
+            + os.path.join(temp_dir, "data", "include.txt")
+            #+ os.path.join(temp_dir, "defaults", "include.txt")
         )
         exit_status = os.system(cmd)
         if exit_status != 0:
@@ -5448,14 +5459,15 @@ class Software(object):
 
         cmd = (
             # SoftwareNames.SOFTWARE_NEXTSTRAIN
-            SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE
-            + " build --native "
+            #SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE
+            #+ " build --native "
+            "nextstrain build "
             + temp_dir
             + " --cores "
             + str(cores)
             + " --configfile "
             + temp_dir
-            + "/config/config.yaml"
+            + "/data/config.yaml"
             + " 2> "
             + temp_dir
             + "/stderr.txt"
@@ -5463,7 +5475,6 @@ class Software(object):
             + temp_dir
             + "/stdout.txt"
         )
-
         exit_status = os.system(cmd)
         if exit_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
@@ -5473,23 +5484,29 @@ class Software(object):
             )
 
         tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
-        # Convert json to tree
-        cmd = "{} --tree {} --output-tree {}".format(
-            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
-            # os.path.join(temp_dir, "auspice", "ncov_current.json"),
-            os.path.join(temp_dir, "auspice", "ncov_default-build.json"),
-            tree_file,
-        )
 
-        exit_status = os.system(cmd)
-        if exit_status != 0:
-            self.logger_production.error("Fail to run: " + cmd)
-            self.logger_debug.error("Fail to run: " + cmd)
-            raise CmdException(
-                message="Fail to run conversion of json to tree.",
-                cmd=cmd,
-                output_path=temp_dir,
-            )
+
+        # Convert json to tree
+        # Just copy the tree file that is generated instead of converting
+        self.utils.copy_file(os.path.join(temp_dir, "results", "current", "tree.nwk"), tree_file)
+
+        #cmd = "{} --tree {} --output-tree {}".format(
+        #    os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+        #    # os.path.join(temp_dir, "auspice", "ncov_current.json"),
+        #    os.path.join(temp_dir, "auspice", "ncov_default-build.json"),
+        #    tree_file,
+        #)
+
+        #exit_status = os.system(cmd)
+        #if exit_status != 0:
+        #    self.logger_production.error("Fail to run: " + cmd)
+        #    self.logger_debug.error("Fail to run: " + cmd)
+        #    raise CmdException(
+        #        #message="Fail to run conversion of json to tree.",
+        #        message="Fail to copy the tree.",
+        #        cmd=cmd,
+        #        output_path=temp_dir,
+        #    )
 
         # Copy log folder to auspice to be included in the zip
         cmd = "cp -r {} {}".format(
@@ -5525,23 +5542,23 @@ class Software(object):
 
         # Put out the alignments too...
         # results/aligned_current.fasta.xz
-        exit_status = os.system(
-            "xz -d {}".format(
-                os.path.join(temp_dir, "results", "aligned_current.fasta.xz")
-            )
-        )
-        if exit_status != 0:
-            self.logger_production.error("Fail to run: " + cmd)
-            self.logger_debug.error("Fail to run: " + cmd)
-            raise CmdException(
-                message="Fail to run unzip alignment file.",
-                cmd=cmd,
-                output_path=temp_dir,
-            )
+        #exit_status = os.system(
+        #    "xz -d {}".format(
+        #        os.path.join(temp_dir, "results", "aligned_current.fasta.xz")
+        #    )
+        #)
+        #if exit_status != 0:
+        #    self.logger_production.error("Fail to run: " + cmd)
+        #    self.logger_debug.error("Fail to run: " + cmd)
+        #    raise CmdException(
+        #        message="Fail to run unzip alignment file.",
+        #        cmd=cmd,
+        #        output_path=temp_dir,
+        #    )
 
         alignment_file = self.utils.get_temp_file("aligned.fasta", sz_type="fasta")
-        self.utils.move_file(
-            os.path.join(temp_dir, "results", "aligned_current.fasta"), alignment_file
+        self.utils.copy_file(
+            os.path.join(temp_dir, "results", "current", "aligned.fasta"), alignment_file
         )
 
         self.utils.remove_dir(temp_dir)
@@ -5632,8 +5649,9 @@ class Software(object):
 
         # Now run Nextstrain
         cmd = (
-            SoftwareNames.SOFTWARE_NEXTSTRAIN
-            + " build --native "
+            #SoftwareNames.SOFTWARE_NEXTSTRAIN
+            #+ " build --native "
+            "nextstrain build "            
             + temp_dir
             + " --cores "
             + str(cores)
@@ -5652,20 +5670,26 @@ class Software(object):
                 message="Fail to run nextstrain.", cmd=cmd, output_path=temp_dir
             )
 
+        # Just copy the original final tree instead of converting from json
         tree_file = self.utils.get_temp_file("treefile.nwk", sz_type="nwk")
+        cmd = "cp {} {}".format(
+                os.path.join(temp_dir, "results", "tree.nwk"),
+                tree_file
+            )
         # Convert json to tree
-        cmd = "{} --tree {} --output-tree {}".format(
-            os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
-            os.path.join(temp_dir, "auspice", "generic.json"),
-            tree_file,
-        )
+        #cmd = "{} --tree {} --output-tree {}".format(
+        #    os.path.join(settings.DIR_SOFTWARE, "nextstrain/auspice_tree_to_table.sh"),
+        #    os.path.join(temp_dir, "auspice", "generic.json"),
+        #    tree_file,
+        #)
 
         exit_status = os.system(cmd)
         if exit_status != 0:
             self.logger_production.error("Fail to run: " + cmd)
             self.logger_debug.error("Fail to run: " + cmd)
             raise CmdException(
-                message="Fail to run conversion of json to tree.",
+                #message="Fail to run conversion of json to tree.",
+                message="Fail to copy tree file.",
                 cmd=cmd,
                 output_path=temp_dir,
             )

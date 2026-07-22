@@ -1514,28 +1514,26 @@ class AddSingleMetadataDatasetFile(
     @cached_property
     def crumbs(self):
         return [
+            ("Datasets", reverse("datasets")),
             (
-                ("Datasets", reverse("datasets")),
-                (
-                    "Add references to dataset",
-                    reverse(
-                        "show-dataset-consensus", kwargs={"pk": self.kwargs.get("pk")}
-                    ),
+                "Add references to dataset",
+                reverse(
+                    "show-dataset-consensus", kwargs={"pk": self.kwargs.get("pk")}
                 ),
-                (
-                    "Update metadata",
-                    reverse(
-                        "dataset-update-metadata", kwargs={"pk": self.kwargs.get("pk")}
-                    ),
+            ),
+            (
+                "Update metadata",
+                reverse(
+                    "dataset-update-metadata", kwargs={"pk": self.kwargs.get("pk")}
                 ),
-                (
-                    "Upload single metadata",
-                    reverse(
-                        "dataset-add-single-file-metadata",
-                        kwargs={"pk": self.kwargs.get("pk")},
-                    ),
+            ),
+            (
+                "Upload single metadata",
+                reverse(
+                    "dataset-add-single-file-metadata",
+                    kwargs={"pk": self.kwargs.get("pk")},
                 ),
-            )
+            ),
         ]
 
     def get_form_kwargs(self):

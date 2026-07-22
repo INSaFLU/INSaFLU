@@ -127,6 +127,8 @@ RUN_SGE = config("RUN_SGE", default=False, cast=bool)
 SGE_ROOT = config("SGE_ROOT")
 
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",

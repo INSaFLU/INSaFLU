@@ -5460,8 +5460,9 @@ class Software(object):
         cmd = (
             # SoftwareNames.SOFTWARE_NEXTSTRAIN
             #SoftwareNames.SOFTWARE_NEXTSTRAIN_DENGUE
-            #+ " build --native "
-            "nextstrain build "
+            #+ " build --native "            
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BIN
+            + " build "
             + temp_dir
             + " --cores "
             + str(cores)
@@ -5651,7 +5652,8 @@ class Software(object):
         cmd = (
             #SoftwareNames.SOFTWARE_NEXTSTRAIN
             #+ " build --native "
-            "nextstrain build "            
+            SoftwareNames.SOFTWARE_NEXTSTRAIN_BIN
+            + " build "            
             + temp_dir
             + " --cores "
             + str(cores)

@@ -491,6 +491,8 @@ class SoftwareNames(object):
     SOFTWARE_IRMA = os.path.join(settings.DIR_SOFTWARE, "irma/irma.sh")
 
     ### Nextstrain
+    SOFTWARE_NEXTSTRAIN_BIN = "/home/flu_user/.nextstrain/cli-standalone/nextstrain"
+
     SOFTWARE_NEXTSTRAIN_DIR = os.path.join(settings.DIR_SOFTWARE, "nextstrain/")
     SOFTWARE_NEXTSTRAIN_VERSION = "0.1"
     SOFTWARE_NEXTSTRAIN = os.path.join(

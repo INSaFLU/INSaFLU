@@ -885,6 +885,10 @@
                     `Toggling species ${speciesId} -> expanded=${newExpanded}`
                 );
 
+                let tbody = document.querySelector(
+                    `.group-wrapper[data-species="${speciesId}"]`
+                );
+
                 document
                     .querySelectorAll(
                         `.group-wrapper[data-species="${speciesId}"]`

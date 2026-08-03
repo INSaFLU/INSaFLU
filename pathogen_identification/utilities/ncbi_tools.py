@@ -214,14 +214,15 @@ def get_representative_assembly(taxid, include_term=None, exclude_term=None) -> 
 @retry_with_backoff(max_retries=3, initial_delay=1)
 def retrieve_reference_sequence(nucleotide_id, output_path, gzipped=True) -> bool:
     extention = ".fasta"
+    tmp_path = None
 
     try:
+
         handle = Entrez.efetch(db="nucleotide", id=nucleotide_id, rettype="fasta", retmode="text")
         fasta_data = handle.read()
         handle.close()
         from utils.utils import Utils
         utils = Utils()        
-        
 
         if gzipped:
             extention += '.gz'
@@ -234,15 +235,15 @@ def retrieve_reference_sequence(nucleotide_id, output_path, gzipped=True) -> boo
             with open(tmp_path, 'w') as f:
                 f.write(fasta_data)
 
-        if os.path.exists(output_path):
-            raise FileExistsError(f"Output file {output_path} already exists.")
-
         utils.move_file(tmp_path, output_path)
 
         return True
     except Exception as e:
         print(f"An error occurred while downloading sequence: {e}")
         return False
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 @retry_with_backoff(max_retries=3, initial_delay=1)
 def retrieve_assembly_sequence(assembly_id, output_path) -> bool:
@@ -275,7 +276,10 @@ def retrieve_assembly_sequence(assembly_id, output_path) -> bool:
     except Exception as e:
         print(f"An error occurred while downloading assembly: {e}")
         return False
-
+    
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 class NCBITools:
     def __init__(self):

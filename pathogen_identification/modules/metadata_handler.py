@@ -274,6 +274,7 @@ class RunMetadataHandler:
 
         if self.rclass.empty is False:
             taxid_cutoff = self._predict_cutoff(self.rclass, project_pk)
+            taxid_cutoff = min(taxid_cutoff, taxid_limit)
             self.rclass = self.rclass.sort_values(by="counts", ascending=False).head(taxid_cutoff)
 
         if self.merged_targets.empty:
@@ -860,6 +861,8 @@ class RunMetadataHandler:
             return remap_params.max_taxids
 
         ml_api_client = MLAPIClient()
+
+        self.logger.info(f"Using model type: {model_type} for cutoff prediction.")
 
         try:
             cutoff_dict = ml_api_client.predict_recall_cutoff(rows, model= model_type)

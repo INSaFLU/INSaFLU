@@ -121,10 +121,6 @@ class Tree_Node:
     def run_reference_overlap_analysis(self):
         # run = RunMain.objects.filter(parameter_set=self.parameter_set).first()
 
-
-        from pathogen_identification.utilities.utilities_views import calculate_reports_overlaps
-        calculate_reports_overlaps(self.parameter_set.sample, force= True)
-
         report_layout_params = TelevirParameters.get_report_layout_params(
             project_pk=self.parameter_set.project.pk
         )
@@ -143,8 +139,18 @@ class Tree_Node:
             report_sorter.sort_reports_save()
             report_sorter.reports_aggregate_register(report_layout_params, run)
 
+        final_reports = FinalReport.objects.filter(
+            sample=self.parameter_set.sample
+        ).order_by("-coverage")
+        final_reports = final_report_best_cov_by_accid(final_reports)
 
+        report_sorter = ReportSorter(
+            self.parameter_set.sample, final_reports, report_layout_params
+        )
 
+        report_sorter.build_tree()
+        report_sorter.sort_reports_save()
+        report_sorter.reports_aggregate_register(report_layout_params)
 
     def receive_run_manager(self, run_manager: PathogenIdentification_TreeDeployment):
         run_manager.prefix = f"run_leaf_{self.node_index}"

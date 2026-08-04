@@ -1061,8 +1061,6 @@ class Remapping:
     def process_bam(self):
 
         self.filter_bamfile_read_names()
-
-        self.markdup_bam_gatk()
         self.filter_bamfile()
 
         if self.check_remap_status_bam():
@@ -1080,7 +1078,7 @@ class Remapping:
                 self.filter_mapping_msamtools(filter)
 
             if filter.name == SoftwareNames.SOFTWARE_GATK4_name:
-                self.markdup_bam_gatk(remove_duplicates=True, sorted_bam = False)
+                self.markdup_bam_gatk(filter, remove_duplicates=True, sorted_bam = False)
 
         self.filter_bam_unmapped()
 
@@ -1496,7 +1494,7 @@ class Remapping:
 
         self.convert_sam_to_bam()
         
-    def markdup_bam_gatk(self, same=True, remove_duplicates=False, sorted_bam = False):
+    def markdup_bam_gatk(self, software: SoftwareDetail, same=True, remove_duplicates=False, sorted_bam = False):
         """
         Mark duplicates in bam file using gatk markdup for single end reads.
         Ensure sorting by read name for markdup to work with single end reads.
@@ -1521,7 +1519,10 @@ class Remapping:
             self.rdir, f"temp{randint(1,1999)}.markdup.bam"
         )
 
-        cmd_markdup = f"gatk MarkDuplicates -I {temp_sorted_bam} -O {temp_markdup_bam} -M {temp_markdup_bam}.metrics --REMOVE_DUPLICATES={str(remove_duplicates).upper()}"
+        cmd_markdup = [
+            f"gatk MarkDuplicates -I {temp_sorted_bam} -O {temp_markdup_bam} -M {temp_markdup_bam}.metrics",
+            software.args.upper()
+        ]
         self.cmd.run(cmd_markdup)
 
         if not os.path.isfile(temp_markdup_bam):

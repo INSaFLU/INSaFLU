@@ -1410,10 +1410,15 @@ class ReadOverlapManager(MappingResultsParser):
         self, features: Dict[str, float], model_type: str
     ) -> Tuple[Optional[bool], float]:
         try:
-            client = self._ml_client()
+            client = self._ml_client() 
+            print(f"Using ML model: {model_type}")
+            print(features)
             result = client.predict_composition_stop_traversal(features, model=model_type)
             return bool(result["stop_traversal"]), float(result.get("probability", 0.0))
         except Exception:
+            import traceback
+            traceback.print_exc()
+
             self.logger.warning("ML API unavailable, falling back to fixed traversal")
             return None, 0.0
 
@@ -1570,7 +1575,7 @@ class ReadOverlapManager(MappingResultsParser):
 
     def get_leaf_clades(self, force=False) -> pd.DataFrame:
         #if self.clustering_model_type and self.clustering_model_type != "Fixed":
-
+        print(f"Predicting clades using model: {self.clustering_model_type}")
         clades_df = self.predict_clades_composition(self.clustering_model_type)
 
         statistics_dict_all = self.get_node_statistics(force=force)

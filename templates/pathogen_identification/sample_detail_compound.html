@@ -63,14 +63,9 @@
     /* Species header inside table: full-width row with flex layout */
     .species-header {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
         gap: 12px;
         padding: 6px 0;
-        /* allow inner pieces to wrap on narrow screens */
         flex-wrap: wrap;
-        /* make header sit clear from previous content */
-        margin-top: 12px;
     }
     /* ensure the td that contains the header gives the header room */
     .species-section td {
@@ -78,6 +73,9 @@
     }
 
     /* title / description */
+
+    .species-title { display: flex; text-align: left; flex-direction: column; }
+
     .species-title h3 { margin: 0; }
     .species-title p { margin: 0; }
 
@@ -155,6 +153,11 @@
     }
 
     /* keep compact title/description spacing */
+
+    .species-title.push-right {
+        margin-right: auto;
+        text-align: left;
+    }
     .species-title h3 { margin-bottom: 4px; font-size: 1.05rem; }
     .species-title p { margin-bottom: 0; color: #6b7280; font-size: 0.9rem; }
 
@@ -381,6 +384,7 @@
                     {% endif %}
                     <div class="float-right overlap-button">
                         <button id="toggle-extra-columns" class="btn btn-primary">Show Extra Columns</button>
+                    
                     </div >
                 </div>
             </div>
@@ -477,7 +481,7 @@
                     {%for species_bundle in report_list%}
                         <tr class="species-section collapsed" data-species="{{ species_bundle.species.taxid }}">
                             <td colspan="100%">
-                                <div class="species-header d-flex align-items-center justify-content-between">
+                                <div class="species-header d-flex">
                                     <!-- species-level collapse/expand toggle (start collapsed) -->
                                     <button type="button" class="btn btn-sm btn-outline-secondary species-toggle-btn" aria-expanded="false" title="Expand species">
                                         <i class="fa fa-chevron-up" aria-hidden="true"></i>
@@ -487,14 +491,20 @@
                                         {% if species_bundle.species.taxid is not None %}
                                         <p class="mb-0 text-muted small">taxID: {{ species_bundle.species.taxid }}</p>
                                         {% endif %}
-                                    </div>
-                                    <div class="species-meta">
                                         {% if species_bundle.total_private_counts %}
                                             <span class="badge badge-primary">
                                                 Private reads: {{ species_bundle.total_private_counts|default:"0" }}
                                             </span>
                                         {% endif %}
                                     </div>
+                                    <div class="species-meta">
+                                        <span class="badge badge-info">
+                                            Groups: {{ species_bundle.report_groups|length }}
+                                        </span>
+                                        <span class="badge badge-info">
+                                            Total private reads: {{ species_bundle.total_private_counts|default:"0" }}
+                                    </div>
+                                    
                                 </div>
                             </td>
                         </tr>
@@ -535,7 +545,7 @@
                                         </div>
                                         <!-- Forth section -->
                                         <div class="custom-section">
-                                            Group size {{final_report.group_list|length}}
+                                            Group size {{group_reports|length}}
                                         </div>
                                         <div class="custom-section">
                                             <a href="#" id="showButton" class="custom-link">Read Overlap</a>

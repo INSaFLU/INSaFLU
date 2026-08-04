@@ -36,6 +36,7 @@ class RunMetadataHandler:
         sift_query: str = "phage",
         prefix: str = "",
         rundir: str = "",
+        logdir: str = "",
     ):
         """
         Initialize metadata handler.
@@ -51,10 +52,17 @@ class RunMetadataHandler:
         self.metadata_paths = config["metadata"]
         self.logger = logging.getLogger(f"{__name__}_{self.prefix}")
         self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(logging.StreamHandler())
 
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
+
+        if logdir:
+            self.logger.addHandler(
+                logging.FileHandler(os.path.join(logdir, f"{self.prefix}_metadata_handler.log"))
+            )
+        else: 
+            self.logger.addHandler(logging.StreamHandler())
+
         self.logger.propagate = False
 
         self.entrez_conn = EntrezWrapper(
@@ -815,8 +823,8 @@ class RunMetadataHandler:
         except ReferenceTaxid.DoesNotExist:
             return None
     
-    @staticmethod
-    def _predict_cutoff(merged_table: pd.DataFrame, project_pk: Optional[int]) -> int:
+
+    def _predict_cutoff(self, merged_table: pd.DataFrame, project_pk: Optional[int]) -> int:
         """
         Predict cutoff for a given merged table."""
 
@@ -834,6 +842,12 @@ class RunMetadataHandler:
             for _, row in merged_table.iterrows()
         ]
         rows = sorted(rows, key=lambda x: x["total_uniq_reads"], reverse=True)
+
+        self.logger.info(f"Predicting cutoff for {len(rows)} taxids using project {project_pk} model.")
+        self.logger.info(f"Rows:")
+        for row in rows:    
+            self.logger.info(row)
+        
 
         from pathogen_identification.utilities.ml_api_client import MLAPIClient
         from pathogen_identification.utilities.televir_parameters import TelevirParameters
@@ -853,6 +867,8 @@ class RunMetadataHandler:
             import traceback
             traceback.print_exc()
             print(f"Error predicting cutoff: {e}. Using default cutoff of 15.")
+        
+        self.logger.info(f"Predicted cutoff: {cutoff_dict}")
 
         cut_off_perc = len(merged_table) * cutoff_dict["predicted_cutoff"]
         return int(cut_off_perc)

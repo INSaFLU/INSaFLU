@@ -3045,6 +3045,9 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             )
         })
 
+        report_taxa = sorted(report_taxa, key=lambda x: len(x["report_groups"]), reverse=True)
+        report_taxa = sorted(report_taxa, key=lambda x: x["total_private_counts"], reverse=True)
+
 
         private_reads_available = any(
             report_group.private_reads_available for report_group in report_groups

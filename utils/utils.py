@@ -231,7 +231,7 @@ class PathUtils(object):
         return os.path.join(main_path, temp_file_name.replace(" ", "_")), path_added
 
 
-class Utils(object):
+class Utils():
     """
     class docs
     """
@@ -384,10 +384,10 @@ class Utils(object):
                 cmd = "rm -rf {}*".format(path_name)
                 os.system(cmd)
 
-    def move_file(self, sz_file_from, sz_file_to):
+    def move_file(self, sz_file_from: Path, sz_file_to):
         if os.path.exists(sz_file_from):
             self.make_path(os.path.dirname(sz_file_to))
-            cmd = "mv " + sz_file_from + " " + sz_file_to
+            cmd = "mv " + str(sz_file_from) + " " + sz_file_to
             exist_status = os.system(cmd)
             if exist_status != 0:
                 self.logger_production.error("Fail to run: " + cmd)
@@ -409,7 +409,7 @@ class Utils(object):
             not os.path.exists(sz_file_to) or not test_destination_file
         ):
             self.make_path(os.path.dirname(sz_file_to))
-            cmd = "ln -f -s " + sz_file_from + " " + sz_file_to
+            cmd = "ln -f -s " + str(sz_file_from) + " " + str(sz_file_to)
             exist_status = os.system(cmd)
             if exist_status != 0:
                 self.logger_production.error("Fail to run: " + cmd)
@@ -419,7 +419,7 @@ class Utils(object):
     def copy_file(self, sz_file_from, sz_file_to):
         if os.path.exists(sz_file_from):
             self.make_path(os.path.dirname(sz_file_to))
-            cmd = "cp " + sz_file_from + " " + sz_file_to
+            cmd = "cp " + str(sz_file_from) + " " + sz_file_to
             exist_status = os.system(cmd)
             if exist_status != 0:
                 self.logger_production.error("Fail to run: " + cmd)

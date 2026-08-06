@@ -3024,7 +3024,7 @@ class SoftwareTreeUtils:
         available_path_nodes = self.query_available_pathnodes(
             pipeline_type=pipeline_type
         )
-        print(available_path_nodes)
+
         trees = list(set(leaf.software_tree for leaf in available_path_nodes.values()))
         software_tree_matched_paths = {
             stree: {

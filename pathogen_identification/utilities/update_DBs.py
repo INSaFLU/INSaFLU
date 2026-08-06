@@ -26,6 +26,9 @@ from pathogen_identification.modules.run_main import RunEngine_class
 
 def summarize_description(description, max_length=100):
 
+    if description is None:
+        return ""
+
     if len(description) > max_length:
         return description[:max_length]
 

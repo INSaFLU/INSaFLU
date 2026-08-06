@@ -134,7 +134,6 @@ def Update_project(project_directory_path, user: str = "admin"):
         project = Projects(
             name=project_name,
             full_path=project_directory_path,
-            project_type=Projects.INHOUSE,
             created_by=user,
         )
         project.save()

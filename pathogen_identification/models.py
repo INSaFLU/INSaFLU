@@ -2207,9 +2207,9 @@ class ReportGroup(models.Model):
 
     @property
     def private_counts_safe(self):
-        if self.private_counts is None:
+        if self.max_private_reads is None:
             return 0
-        return self.private_counts
+        return self.max_private_reads
 
     @property
     def js_heatmap_ready(self):

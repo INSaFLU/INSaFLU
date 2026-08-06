@@ -97,6 +97,7 @@ $('#id-kill-all-button').on('click', function(){
         }, // data sent with the post request
             
     success: function (data) {
+          console.log(data);
           if (data['is_ok']) {
             if (data['is_empty']) {
               $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +

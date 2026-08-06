@@ -603,6 +603,7 @@ class RunDetail_main:
             sift_query=self.config["sift_query"],
             prefix=self.prefix,
             rundir=self.deployment_dir,
+            logdir= self.log_dir,
         )
 
     def update_reads(self):

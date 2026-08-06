@@ -142,11 +142,13 @@ class Tree_Node:
         final_reports = FinalReport.objects.filter(
             sample=self.parameter_set.sample
         ).order_by("-coverage")
-
         final_reports = final_report_best_cov_by_accid(final_reports)
+
         report_sorter = ReportSorter(
             self.parameter_set.sample, final_reports, report_layout_params
         )
+
+        report_sorter.build_tree()
         report_sorter.sort_reports_save()
         report_sorter.reports_aggregate_register(report_layout_params)
 

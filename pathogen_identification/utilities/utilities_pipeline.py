@@ -2201,12 +2201,11 @@ class Utils_Manager:
         if LeafParameter.objects.filter(leaf=parameter_leaf).exists():
             self.logger.warning(f"Leaf {parameter_leaf} already has parameters registered. Skipping registration.")
             return 
-
         for _, row in parameters_df.iterrows():
             LeafParameter.objects.create(
                 leaf=parameter_leaf,
                 module = row['module'],
-                software_name = row['software_name'],
+                software_name = row['software'],
                 parameter_name = row['parameter'],
                 parameter_value = row['value'],
             )
@@ -2216,8 +2215,7 @@ class Utils_Manager:
         from pathogen_identification.models import LeafParameter
 
         if not LeafParameter.objects.filter(leaf=parameter_leaf).exists():
-            self.logger.warning(f"Leaf {parameter_leaf} does not have parameters registered. Returning empty dataframe.")
-            return pd.DataFrame(columns=['module', 'software_name', 'parameter', 'value'])
+            self.generate_leaf_parameters(parameter_leaf)
 
         leaf_parameters = LeafParameter.objects.filter(leaf=parameter_leaf)
 
@@ -3024,7 +3022,7 @@ class SoftwareTreeUtils:
         available_path_nodes = self.query_available_pathnodes(
             pipeline_type=pipeline_type
         )
-        print(available_path_nodes)
+
         trees = list(set(leaf.software_tree for leaf in available_path_nodes.values()))
         software_tree_matched_paths = {
             stree: {

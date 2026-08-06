@@ -685,16 +685,16 @@ class RunMainWrapper:
         self.project = run.project
         self.sample = run.sample
         self.parameter_set = run.parameter_set
-        self.pk = run.pk
+        self.pk = run.pk 
 
-        if run.parameter_set is None:
+        if run.parameter_set is None or run.parameter_set.leaf is None:
             self.params_df = pd.DataFrame()
 
         else:
             utils_manager = Utils_Manager()
             self.params_df = utils_manager.get_leaf_parameters(run.parameter_set.leaf)
 
-            self.params_df.drop_duplicates(["module", "software"], inplace=True)
+            self.params_df.drop_duplicates(["module", "software_name"], inplace=True)
             self.params_df.set_index("module", inplace=True)
 
         self.run_type = run.run_type
@@ -733,7 +733,7 @@ class RunMainWrapper:
 
         if pipeline_name in self.params_df.index:
 
-            softwares_column = self.params_df.loc[pipeline_name, "software"]
+            softwares_column = self.params_df.loc[pipeline_name, "software_name"]
 
             if isinstance(softwares_column, str):
                 softwares_column = [softwares_column]
@@ -1836,11 +1836,12 @@ class ReportSorter:
                 }
                 from collections import Counter
                 species_counter = Counter(species.values())
-                most_common_species, most_common_count = species_counter.most_common(1)[0]
-                if most_common_count / len(species) > 0.5:
-                    report_group.main_species = most_common_species
-                    report_group.main_species_percentage = most_common_count / len(species)
-                    report_group.save()
+                if len(species_counter) > 0:
+                    most_common_species, most_common_count = species_counter.most_common(1)[0]
+                    if most_common_count / len(species) > 0.5:
+                        report_group.main_species = most_common_species
+                        report_group.main_species_percentage = most_common_count / len(species)
+                        report_group.save()
 
     def sort_reports_save(self, force=False):
         """

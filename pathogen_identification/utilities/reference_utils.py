@@ -88,24 +88,24 @@ class AssemblyStore:
         try: 
             with transaction.atomic():
 
-                taxid = ReferenceTaxid.objects.get_or_create(
+                taxid, _created = ReferenceTaxid.objects.get_or_create(
                     taxid=str(local_assembly.taxid)
                 )
 
-                reference_source_file = ReferenceSourceFile.objects.get_or_create(
+                reference_source_file, _ = ReferenceSourceFile.objects.get_or_create(
                     file = local_assembly.file_path,
                     owner = None, 
                     description = local_assembly.description,
                     is_cache = cache
                 )
 
-                reference_source = ReferenceSource.objects.get_or_create(
+                reference_source, _ = ReferenceSource.objects.get_or_create(
                     taxid = taxid,
                     accid = str(local_assembly.accession),
                     description = local_assembly.description,
                 )
 
-                source_map = ReferenceSourceFileMap.objects.get_or_create(
+                source_map, _ = ReferenceSourceFileMap.objects.get_or_create(
                     reference_source = reference_source, 
                     reference_source_file = reference_source_file
                 )

@@ -680,15 +680,27 @@ class ReadOverlapManager(MappingResultsParser):
         if result.returncode != 0:
             self.logger.error(f"mapping_to_matrix failed:\n{result.stderr}")
             raise RuntimeError(f"mapping_to_matrix failed: {result.stderr}")
-
+                
         distance_path = os.path.join(output_dir, "distance_matrix.tsv")
         presence_path = os.path.join(output_dir, "presence_absence_matrix.tsv")
 
-        distance_matrix = pd.read_csv(distance_path, sep="\t", index_col=0)
+        if not os.path.isfile(distance_path):
+            distance_matrix = pd.DataFrame()
+        else:
+            distance_matrix = pd.read_csv(distance_path, sep="\t", index_col=0)
 
         # skip first line it is buffered and not a valid header
-        presence_matrix = pd.read_csv(presence_path, sep="\t", index_col=0, skiprows=1, header=None)
+        if not os.path.isfile(presence_path):
+            presence_matrix = pd.DataFrame()
+        else:
+            presence_matrix = pd.read_csv(presence_path, sep="\t", index_col=0, skiprows=1, header=None)
 
+        if presence_matrix.shape[0] == 0 or presence_matrix.shape[1] == 0:
+            presence_matrix = pd.DataFrame(
+                index=distance_matrix.index, columns=distance_matrix.columns
+            )
+            return distance_matrix, presence_matrix
+        
         # remove path and .bam extension from index
         distance_matrix.index = distance_matrix.index.astype(str).str.replace(r"\.bam$", "", regex=True)
         distance_matrix.index = distance_matrix.index.astype(str).str.replace(r".*/", "", regex=True)
@@ -700,6 +712,7 @@ class ReadOverlapManager(MappingResultsParser):
         return distance_matrix, presence_matrix
 
     def generate_distance_matrix(self, force=False):
+
         if os.path.isfile(self.distance_matrix_path) and not force:
             distance_matrix = pd.read_csv(self.distance_matrix_path, index_col=0)
         else:

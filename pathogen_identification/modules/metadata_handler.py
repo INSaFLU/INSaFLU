@@ -788,7 +788,9 @@ class RunMetadataHandler:
             source = ReferenceSource.objects.get(accid=accid)
             return source.taxid.taxid
         except ReferenceSource.DoesNotExist:
-            return None
+            sources = ReferenceSource.objects.filter(accid=accid)
+            if len(sources) > 0:
+                return sources[0].taxid.taxid
 
     def get_taxid_representative_accid(self, taxid: int) -> Optional[str]:
         """

@@ -784,13 +784,12 @@ class RunMetadataHandler:
         Return taxid for a given accid.
         """
 
-        try:
-            source = ReferenceSource.objects.get(accid=accid)
-            return source.taxid.taxid
-        except ReferenceSource.DoesNotExist:
-            sources = ReferenceSource.objects.filter(accid=accid)
-            if len(sources) > 0:
-                return sources[0].taxid.taxid
+
+        sources = ReferenceSource.objects.filter(accid=accid).first()
+        if sources is None:
+            return None
+        else:
+            return sources.taxid.taxid
 
     def get_taxid_representative_accid(self, taxid: int) -> Optional[str]:
         """

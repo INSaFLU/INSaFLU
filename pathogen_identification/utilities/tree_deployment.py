@@ -143,6 +143,7 @@ class Tree_Node:
             sample=self.parameter_set.sample
         ).order_by("-coverage")
         final_reports = final_report_best_cov_by_accid(final_reports)
+        print(final_reports)
 
         report_sorter = ReportSorter(
             self.parameter_set.sample, final_reports, report_layout_params

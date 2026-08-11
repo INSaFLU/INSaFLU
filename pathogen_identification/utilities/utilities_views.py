@@ -1407,7 +1407,7 @@ class ReportSorter:
         return self.analysis_empty == False
 
     def build_tree(self):
-
+        print(self.reports_available)
         if self.reports_available:
             self.overlap_manager.build_tree()
 
@@ -1741,20 +1741,22 @@ class ReportSorter:
         register in table
         """
 
+
+        self.sort_reports_save()
+
         sorted_reports = self.get_reports_compound()
         excluded_reports_exist = self.check_excluded_exist()
         empty_reports = self.get_reports_empty()
 
         if excluded_reports_exist and self.analysis_empty is False:
-
             if len(empty_reports.group_list) > 0:
                 sorted_reports.append(empty_reports)
 
-        self.build_tree()
+
         clade_heatmap_json = self.clade_heatmap_json(
             to_keep=[report_group.name for report_group in sorted_reports]
         )
-
+        print(sorted_reports)
         #########
         private_reads_available = False
         for group in sorted_reports:
@@ -1789,6 +1791,7 @@ class ReportSorter:
             )
 
             report_aggregate.save()
+            print("### REPORT AGGREGATE CREATED ###")
         
             for group in sorted_reports:
                 report_group = ReportGroup.objects.create(
@@ -1808,6 +1811,7 @@ class ReportSorter:
                     overlap_heatmap_json = group.js_heatmap_data,
                 )
                 report_group.save()
+                print(report_group.name)
                 taxa = []
 
                 for report in group.group_list:
@@ -1868,6 +1872,8 @@ class ReportSorter:
         clades_to_keep = []
 
         ## plot pairwise shared reads
+        print("### OVERLAP GROUPS ###")
+        print(overlap_groups)
         for group in overlap_groups:
             group_df = group[1]
 
@@ -1928,7 +1934,9 @@ class ReportSorter:
         return report_groups
 
     def get_sorted_reports(self) -> List[FinalReportGroup]:
-
+        
+        print(os.path.exists(self.analysis_df_path))
+        print("### overlap analysis path exists ###")
         if os.path.exists(self.analysis_df_path):
             overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")
         else:
@@ -1937,6 +1945,8 @@ class ReportSorter:
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
         sorted_reports = []
 
+        print("SORTED REPORTS #########################")
+        print(overlap_groups)
         for group in overlap_groups:
             group_df = group[1]
 
@@ -1986,6 +1996,14 @@ class ReportSorter:
         sorted_groups: List[FinalReportGroup] = sorted(
             sorted_reports, key=get_group_max_coverage, reverse=True
         )
+
+        print("### SORTED GROUPS ###")
+        for report_group in sorted_groups:
+            print(
+                report_group.name,
+                report_group.max_coverage,
+                report_group.private_proportion,
+            )
 
         sorted_groups = self.get_reports_private_reads(sorted_groups)
         sorted_groups = self.sort_group_list_reports(sorted_groups)
@@ -2134,6 +2152,7 @@ class ReportSorter:
             return self.return_no_analysis()
 
         if not self.check_analyzed():
+            print("Analysis not performed, returning unsorted reports")
             report_group = FinalReportGroup(
                 name="Full report, no overlap analysis",
                 total_counts=0,
@@ -2159,9 +2178,9 @@ class ReportSorter:
 
         for report_group in reports:
             new_list = []
-            for wapped_report in report_group.group_list:
-                report_compound = FinalReportCompound(wapped_report)
-                report_compound.update_private_reads(wapped_report.private_reads)
+            for wrapped_report in report_group.group_list:
+                report_compound = FinalReportCompound(wrapped_report)
+                report_compound.update_private_reads(wrapped_report.private_reads)
                 new_list.append(report_compound)
 
             report_group.group_list = new_list
@@ -2196,7 +2215,7 @@ class ReportSorter:
 
         return report_group
 
-
+ 
 def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     """
     calculate reports overlaps
@@ -2205,12 +2224,13 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     report_layout_params = TelevirParameters.get_report_layout_params(
         project_pk=sample.project.pk
     )
+
+    final_reports = final_report_best_cov_by_accid(final_reports)
+
     report_sorter = ReportSorter(
         sample, final_reports, report_layout_params, force=force
     )
 
-    report_sorter.build_tree()
-    report_sorter.sort_reports_save()
     report_sorter.reports_aggregate_register(report_layout_params)
 
 

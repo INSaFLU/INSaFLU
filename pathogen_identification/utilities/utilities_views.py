@@ -1791,7 +1791,6 @@ class ReportSorter:
             )
 
             report_aggregate.save()
-            print("### REPORT AGGREGATE CREATED ###")
         
             for group in sorted_reports:
                 report_group = ReportGroup.objects.create(
@@ -1811,7 +1810,6 @@ class ReportSorter:
                     overlap_heatmap_json = group.js_heatmap_data,
                 )
                 report_group.save()
-                print(report_group.name)
                 taxa = []
 
                 for report in group.group_list:
@@ -1871,9 +1869,6 @@ class ReportSorter:
 
         clades_to_keep = []
 
-        ## plot pairwise shared reads
-        print("### OVERLAP GROUPS ###")
-        print(overlap_groups)
         for group in overlap_groups:
             group_df = group[1]
 
@@ -1934,9 +1929,7 @@ class ReportSorter:
         return report_groups
 
     def get_sorted_reports(self) -> List[FinalReportGroup]:
-        
-        print(os.path.exists(self.analysis_df_path))
-        print("### overlap analysis path exists ###")
+
         if os.path.exists(self.analysis_df_path):
             overlap_analysis = pd.read_csv(self.analysis_df_path, sep="\t")
         else:
@@ -1945,8 +1938,6 @@ class ReportSorter:
         overlap_groups = list(overlap_analysis.groupby(["total_counts", "clade"]))[::-1]
         sorted_reports = []
 
-        print("SORTED REPORTS #########################")
-        print(overlap_groups)
         for group in overlap_groups:
             group_df = group[1]
 
@@ -1996,14 +1987,6 @@ class ReportSorter:
         sorted_groups: List[FinalReportGroup] = sorted(
             sorted_reports, key=get_group_max_coverage, reverse=True
         )
-
-        print("### SORTED GROUPS ###")
-        for report_group in sorted_groups:
-            print(
-                report_group.name,
-                report_group.max_coverage,
-                report_group.private_proportion,
-            )
 
         sorted_groups = self.get_reports_private_reads(sorted_groups)
         sorted_groups = self.sort_group_list_reports(sorted_groups)
@@ -2152,7 +2135,6 @@ class ReportSorter:
             return self.return_no_analysis()
 
         if not self.check_analyzed():
-            print("Analysis not performed, returning unsorted reports")
             report_group = FinalReportGroup(
                 name="Full report, no overlap analysis",
                 total_counts=0,

@@ -42,16 +42,19 @@ def shannon_diversity_from_counts(counts: list[int]) -> float:
     if total == 0:
         return 0.0
     proportions = [count / total for count in counts]
+    print(proportions)
     return shannon_diversity(proportions)
 
 def shannon_diversity_from_list(taxa: list[str]) -> float:
     """
     Calculate Shannon diversity index given a list of taxa.
     """
-
+    print("#### Shannon diversity calculation from taxa list ####")
+    print(f"Calculating Shannon diversity for taxa: {taxa}")
     if not taxa:
         return 0.0
     counts = Counter(taxa)
+    print(f"Taxa counts: {counts}")
     return shannon_diversity_from_counts(list(counts.values()))
 
 def pairwise_shared_count(
@@ -773,6 +776,8 @@ class ReadOverlapManager(MappingResultsParser):
         index_arr = list(proximity_matrix.index)
         index_to_pos = {name: i for i, name in enumerate(index_arr)}
 
+        print(index_to_pos)
+
         def calc_node_stats(node):
             leaves_parted = self.tree_manager.get_leaves_parted(node)
             if len(leaves_parted) < 2:
@@ -1448,10 +1453,29 @@ class ReadOverlapManager(MappingResultsParser):
         features["n_leaves"] = float(len(leaves))
 
         shared_df = self.clade_shared_individual_summary(leaves)
-
+        print(f"Shared DF for clade {clade.name}:")
+        print(shared_df)
         node_stats = self.node_stats.get(clade, {})
         features["Min_Shared"] = float(node_stats.get("Min_Shared", 0.0))
         features["Min_Dist"] = float(node_stats.get("Min_Dist", 0.0))
+
+        print(features)
+
+        #if shared_df.empty:
+        #    features["Min_Shared"] = 0.0
+        #else:
+        #    features["Min_Shared"] = float(shared_df["proportion_max"].min())
+
+        #if len(leaves) <= 1:
+        #    features["Min_Dist"] = 0.0
+        ##else:
+        ##    sub = distance_matrix.reindex(index=leaves, columns=leaves)
+        ##    # max of each pairwise distance, then min of those maxes
+        ##    vals = sub.where(np.triu(np.ones(sub.shape), k=1).astype(bool)).stack()
+        ##    print(vals)
+        ##    print("##############################################")
+        #    features["Min_Dist"] = float(vals.min()) if len(vals) > 0 else 0.0
+
 
         if accid_df.empty:
             features["tax_diversity"] = 0.0
@@ -1470,7 +1494,8 @@ class ReadOverlapManager(MappingResultsParser):
     ) -> Tuple[Optional[bool], float]:
         try:
             client = self._ml_client() 
-
+            print(f"Using ML model: {model_type}")
+            print(features)
             result = client.predict_composition_stop_traversal(features, model=model_type)
             return bool(result["stop_traversal"]), float(result.get("probability", 0.0))
         except Exception:
@@ -1558,6 +1583,7 @@ class ReadOverlapManager(MappingResultsParser):
 
         features = self._node_features(clade, leaves, accid_df)
         stop, prob = self._predict_stop_traversal(features, model_type)
+        print(f"Predicted stop traversal: {stop} with probability {prob}")
 
         if stop is None:
             raise RuntimeError("ML API unavailable and no fallback model provided.")
@@ -1638,6 +1664,7 @@ class ReadOverlapManager(MappingResultsParser):
 
     def get_leaf_clades(self, force=False) -> pd.DataFrame:
         #if self.clustering_model_type and self.clustering_model_type != "Fixed":
+        print(f"Predicting clades using model: {self.clustering_model_type}")
         self.recalculate_all_min_pairwise_dist()
         
         clades_df = self.predict_clades_composition(self.clustering_model_type)

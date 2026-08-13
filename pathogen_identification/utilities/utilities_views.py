@@ -262,8 +262,9 @@ class SampleReadsRetrieve:
                     continue
 
                 host_depletion_software = params_df.loc[
-                    ConstantsSettings.PIPELINE_NAME_host_depletion, "software"
+                    ConstantsSettings.PIPELINE_NAME_host_depletion, "software_name"
                 ]
+
                 host_depletion_parameters = params_df.loc[
                     ConstantsSettings.PIPELINE_NAME_host_depletion, "value"
                 ]
@@ -281,7 +282,7 @@ class SampleReadsRetrieve:
                 if ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
 
                     enrichment_software = params_df.loc[
-                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software_name"
                     ]
                     enrichment_parameters = params_df.loc[
                         ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
@@ -303,7 +304,7 @@ class SampleReadsRetrieve:
                     psample.qc = True
                     qc_multiple = MultipleQCSoftware([])
                     for row in qc_block.iterrows():
-                        qc_software = row[1]["software"]
+                        qc_software = row[1]["software_name"]
                         qc_parameters = row[1]["value"]
                         software_qc = QCSoftware(qc_software, qc_parameters)
                         qc_multiple.add_software(software_qc)
@@ -319,7 +320,7 @@ class SampleReadsRetrieve:
                     continue
 
                 enrichment_software = params_df.loc[
-                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software_name"
                 ]
                 enrichment_parameters = params_df.loc[
                     ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
@@ -345,7 +346,7 @@ class SampleReadsRetrieve:
                     psample.qc = True
                     qc_multiple = MultipleQCSoftware([])
                     for row in qc_block.iterrows():
-                        qc_software = row[1]["software"]
+                        qc_software = row[1]["software_name"]
                         qc_parameters = row[1]["value"]
                         software_qc = QCSoftware(qc_software, qc_parameters)
                         qc_multiple.add_software(software_qc)
@@ -372,7 +373,7 @@ class SampleReadsRetrieve:
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
                 qc_multiple = MultipleQCSoftware([])
                 for row in qc_block.iterrows():
-                    qc_software = row[1]["software"]
+                    qc_software = row[1]["software_name"]
                     qc_parameters = row[1]["value"]
                     software_qc = QCSoftware(qc_software, qc_parameters)
                     qc_multiple.add_software(software_qc)

@@ -12,6 +12,9 @@ from pathogen_identification.models import (
     PIProject_Sample,
 )
 from settings.models import Software
+from pathogen_identification.utilities.utilities_general import (
+    differences_tuple_list
+)
 
 def excluded_steps_decorator(function):
     """

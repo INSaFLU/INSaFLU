@@ -1670,6 +1670,26 @@ class ReadOverlapManager(MappingResultsParser):
         clades_df = self.predict_clades_composition(self.clustering_model_type)
 
         statistics_dict_all = self.get_node_statistics(force=force)
+        print("########## CLADE DF ##########")
+        print(clades_df)
+        print(clades_df.columns)
+        print("########## CLADE STATISTICS ##########")
+        print(statistics_dict_all)
+        statistics_dict_all = {
+            clade.name: stats for clade, stats in statistics_dict_all.items() if clade.name is not None
+        }
+        clades_df["private_proportion"] = clades_df["clade"].apply(
+            lambda x: statistics_dict_all.get(x, Clade("", [], 0, 0, 0, 0, 0, 0,0, pd.DataFrame())).private_proportion
+        )
+        clades_df["shared_proportion_max"] = clades_df["clade"].apply(
+            lambda x: statistics_dict_all.get(x, Clade("", [], 0, 0, 0, 0, 0, 0,0, pd.DataFrame())).shared_proportion_max
+        )
+        clades_df["private_counts"] = clades_df["clade"].apply(
+            lambda x: statistics_dict_all.get(x, Clade("", [], 0, 0, 0, 0, 0, 0,0, pd.DataFrame())).private_counts
+        )
+        clades_df["private_counts"] = clades_df["clade"].apply(
+            lambda x: statistics_dict_all.get(x, Clade("", [], 0, 0, 0, 0, 0, 0,0, pd.DataFrame())).group_counts
+        )
 
         return clades_df
 

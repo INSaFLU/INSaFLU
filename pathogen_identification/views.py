@@ -3034,16 +3034,17 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
                 }
             for species in set(reported_taxa.values()) if species is not None
         ]
-
-        report_taxa.append({
-            "species": {"name": "Unassigned", "taxid": None},
-            "report_groups": {
-                rg: sorted_reports[rg] for rg in report_groups if rg.main_species is None
-            },
-            "total_private_counts": sum(
-                rg.private_counts_safe for rg in report_groups if rg.main_species is None
-            )
-        })
+        
+        if any(species is None for species in reported_taxa.values()):
+            report_taxa.append({
+                "species": {"name": "Unassigned", "taxid": None},
+                "report_groups": {
+                    rg: sorted_reports[rg] for rg in report_groups if rg.main_species is None
+                },
+                "total_private_counts": sum(
+                    rg.private_counts_safe for rg in report_groups if rg.main_species is None
+                )
+            })
 
         report_taxa = sorted(report_taxa, key=lambda x: len(x["report_groups"]), reverse=True)
         report_taxa = sorted(report_taxa, key=lambda x: x["total_private_counts"], reverse=True)

@@ -1848,6 +1848,8 @@ class ReportSorter:
                 
                 report_group.main_species = species[reports_sorted_cov[0].taxid]
                 report_group.main_species_percentage = species_counter[report_group.main_species] / len(species)
+                report_group.save()
+                print(report_group.name, report_group.main_species, report_group.main_species_percentage)
 
                 # sort by frequency and get the most common species
                 #if len(species_counter) > 0:

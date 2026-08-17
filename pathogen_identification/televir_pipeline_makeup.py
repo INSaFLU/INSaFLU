@@ -12,9 +12,6 @@ from pathogen_identification.models import (
     PIProject_Sample,
 )
 from settings.models import Software
-from pathogen_identification.utilities.utilities_general import (
-    differences_tuple_list
-)
 
 def excluded_steps_decorator(function):
     """
@@ -41,17 +38,6 @@ def excluded_steps_decorator(function):
 
     return wrapped
 
-
-def differences_tuple_list(lista, listb):
-    """
-    Return the differences between two lists
-    """
-    list_a = [tuple([str(x) for x in y]) for y in lista]
-    list_a = set(list_a)
-
-    list_b = [tuple([str(x) for x in y]) for y in listb]
-    list_b = set(list_b)
-    return list(list_a.symmetric_difference(list_b))
 
 
 #################

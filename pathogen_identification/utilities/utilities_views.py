@@ -1812,10 +1812,12 @@ class ReportSorter:
                 )
                 report_group.save()
                 taxa = []
+                reports = []
 
                 for report in group.group_list:
                     actual_report = FinalReport.objects.get(pk=report.report_pk)
                     report_group.reports.add(actual_report)
+                    reports.append(actual_report)
 
                     report_data = GroupReportData.objects.create(
                         report = actual_report,
@@ -1830,6 +1832,9 @@ class ReportSorter:
                         report_aggregate.runs.add(run)
 
                     taxa.append(actual_report.taxid)
+
+                if len(taxa) == 0:
+                    continue
                 
                 references = {
                     taxid: ReferenceTaxid.objects.get(taxid=taxid) for taxid in taxa
@@ -1839,12 +1844,18 @@ class ReportSorter:
                 }
                 from collections import Counter
                 species_counter = Counter(species.values())
-                if len(species_counter) > 0:
-                    most_common_species, most_common_count = species_counter.most_common(1)[0]
-                    if most_common_count / len(species) > 0.5:
-                        report_group.main_species = most_common_species
-                        report_group.main_species_percentage = most_common_count / len(species)
-                        report_group.save()
+                reports_sorted_cov = sorted(reports, key=lambda x: x.coverage, reverse=True)
+                
+                report_group.main_species = species[reports_sorted_cov[0].taxid]
+                report_group.main_species_percentage = species_counter[report_group.main_species] / len(species)
+
+                # sort by frequency and get the most common species
+                #if len(species_counter) > 0:
+                #    most_common_species, most_common_count = species_counter.most_common(1)[0]
+                #    if most_common_count / len(species) > 0.5:
+                #        report_group.main_species = most_common_species
+                #        report_group.main_species_percentage = most_common_count / len(species)
+                #        report_group.save()
 
     def sort_reports_save(self, force=False):
         """

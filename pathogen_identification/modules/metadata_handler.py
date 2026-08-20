@@ -856,9 +856,10 @@ class RunMetadataHandler:
         from constants.software_names import SoftwareNames
 
         model_type = TelevirParameters.get_recall_model(project_pk=project_pk)
+        remap_params = TelevirParameters.get_remap_software(project_pk=project_pk)
 
         if model_type == SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model:
-            remap_params = TelevirParameters.get_remap_software(project_pk=project_pk)
+            
             return remap_params.max_taxids
 
         ml_api_client = MLAPIClient()
@@ -871,6 +872,7 @@ class RunMetadataHandler:
             import traceback
             traceback.print_exc()
             print(f"Error predicting cutoff: {e}. Using default cutoff of 15.")
+            cutoff_dict = {"predicted_cutoff": remap_params.max_taxids}
         
         self.logger.info(f"Predicted cutoff: {cutoff_dict}")
 

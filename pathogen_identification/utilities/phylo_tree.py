@@ -25,6 +25,9 @@ class PhyloTreeManager:
     def get_node_leaves(self, node):
         return self.node_leaves_cache.get(node, [])
 
+    def node_in_digraph(self, node):
+        return node in self.nx_tree.nodes()
+
     def get_leaves_parted(self, node):
         if self.nx_tree.out_degree(node) == 0:
             return [self.node_leaves_cache.get(node, [node])]

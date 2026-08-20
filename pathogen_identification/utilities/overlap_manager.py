@@ -811,6 +811,8 @@ class ReadOverlapManager(MappingResultsParser):
         
         self.node_stats = {}
         for node in self.tree_manager.tree.find_clades(order="postorder"):
+            if self.tree_manager.node_in_digraph(node) is False:
+                continue
             stats = calc_node_stats(node)
             self.node_stats[node] = stats
 
@@ -1458,24 +1460,6 @@ class ReadOverlapManager(MappingResultsParser):
         node_stats = self.node_stats.get(clade, {})
         features["Min_Shared"] = float(node_stats.get("Min_Shared", 0.0))
         features["Min_Dist"] = float(node_stats.get("Min_Dist", 0.0))
-
-        print(features)
-
-        #if shared_df.empty:
-        #    features["Min_Shared"] = 0.0
-        #else:
-        #    features["Min_Shared"] = float(shared_df["proportion_max"].min())
-
-        #if len(leaves) <= 1:
-        #    features["Min_Dist"] = 0.0
-        ##else:
-        ##    sub = distance_matrix.reindex(index=leaves, columns=leaves)
-        ##    # max of each pairwise distance, then min of those maxes
-        ##    vals = sub.where(np.triu(np.ones(sub.shape), k=1).astype(bool)).stack()
-        ##    print(vals)
-        ##    print("##############################################")
-        #    features["Min_Dist"] = float(vals.min()) if len(vals) > 0 else 0.0
-
 
         if accid_df.empty:
             features["tax_diversity"] = 0.0

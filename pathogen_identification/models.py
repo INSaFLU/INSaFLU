@@ -2253,6 +2253,15 @@ class RawReferenceCompoundModel(models.Model):
     screening_count = models.IntegerField(default=0)
 
     @property
+    def run(self):
+        if self.mapped_final_report is not None:
+            return self.mapped_final_report.run
+        elif self.mapped_raw_reference is not None:
+            return self.mapped_raw_reference.run
+        else:
+            return None
+
+    @property
     def mapped_html(self):
 
         if self.mapped_final_report is None and self.mapped_raw_reference is None:

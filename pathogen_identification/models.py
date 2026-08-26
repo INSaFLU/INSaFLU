@@ -2010,11 +2010,16 @@ class FinalReport(models.Model):
     CONTROL_FLAG_SOURCE = 1
     CONTROL_FLAG_PRESENT = 2
     CONTROL_FLAG_WARNING = 3
+    CONTROL_FLAG_MAPPED_NO_REPORT = 4
+    CONTROL_FLAG_UNMAPPED = 5
 
     control_flag_options = {
         CONTROL_FLAG_NONE: "",
         CONTROL_FLAG_PRESENT: "Taxid found in control",
         CONTROL_FLAG_SOURCE: "",
+        CONTROL_FLAG_WARNING: "Warning: Control mapping failed",
+        CONTROL_FLAG_MAPPED_NO_REPORT: "Mapped in control but no report",
+        CONTROL_FLAG_UNMAPPED: "Unmapped in control",
     }
 
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)

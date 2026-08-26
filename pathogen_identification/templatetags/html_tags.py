@@ -28,6 +28,10 @@ def igv_app_script(directory, bamfile, indexBam):
 def flag_control(flag):
     if flag == FinalReport.CONTROL_FLAG_PRESENT:
         return "Taxid found in control"
+    elif flag == FinalReport.CONTROL_FLAG_MAPPED_NO_REPORT:
+        return "Mapped in control but no report"
+    elif flag == FinalReport.CONTROL_FLAG_UNMAPPED:
+        return "Unmapped in control"
 
     else:
         return ""

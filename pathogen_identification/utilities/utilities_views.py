@@ -15,7 +15,7 @@ from fluwebvirus.settings import MEDIA_URL, STATIC_ROOT
 from managing_files.models import Sample as INSaFLU_Sample
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
+from pathogen_identification.models import (ContigClassification, FinalReport, RawReferenceCompoundModel,
                                             GroupReportData, ParameterSet,
                                             PIProject_Sample, Projects,
                                             RawReference,
@@ -1169,6 +1169,27 @@ def set_control_reports(project_pk: int):
             project=project, is_control=True
         )
 
+        control_compound_raw_references = RawReferenceCompoundModel.objects.filter(
+            run__sample__in=control_samples
+        )
+
+        control_unmapped = control_compound_raw_references.filter(
+            mapped_raw_reference__isnull=True
+        ).distinct("taxid").values_list("taxid", flat=True)
+        control_unmapped = set(control_unmapped)
+
+        control_mapped_no_report = control_compound_raw_references.filter(
+            mapped_raw_reference__isnull=False,
+            mapped_final_report__isnull=True,
+        ).distinct("taxid").values_list("taxid", flat=True)
+        control_mapped_no_report = set(control_mapped_no_report)
+
+        control_mapped_with_report = control_compound_raw_references.filter(
+            mapped_raw_reference__isnull=False,
+            mapped_final_report__isnull=False,
+        ).distinct("taxid").values_list("taxid", flat=True)
+        control_mapped_with_report = set(control_mapped_with_report)
+
         control_reports = FinalReport.objects.filter(
             sample__in=control_samples
         ).distinct("taxid")
@@ -1181,8 +1202,12 @@ def set_control_reports(project_pk: int):
         )
 
         for sample_report in other_reports:
-            if sample_report.taxid in control_report_taxids_set:
+            if sample_report.taxid in control_mapped_with_report:
                 sample_report.control_flag = FinalReport.CONTROL_FLAG_PRESENT
+            elif sample_report.taxid in control_mapped_no_report:
+                sample_report.control_flag = FinalReport.CONTROL_FLAG_MAPPED_NO_REPORT
+            elif sample_report.taxid in control_unmapped:
+                sample_report.control_flag = FinalReport.CONTROL_FLAG_UNMAPPED
             else:
                 sample_report.control_flag = FinalReport.CONTROL_FLAG_NONE
 

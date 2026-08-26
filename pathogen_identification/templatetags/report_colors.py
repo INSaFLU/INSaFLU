@@ -3,7 +3,7 @@ import os
 from django import template
 from django.utils.safestring import mark_safe
 
-from pathogen_identification.models import FinalReport
+from pathogen_identification.models import FinalReport, ReportGroup
 from pathogen_identification.utilities.televir_parameters import TelevirParameters
 
 register = template.Library()
@@ -193,4 +193,15 @@ def flag_control_color(flag):
     """Set background color to red if flag is True, otherwise set it to dark gray."""
     if flag in [FinalReport.CONTROL_FLAG_PRESENT]:
         return "background-color: rgba(255, 0, 0, 0.5);"
+    elif flag in [FinalReport.CONTROL_FLAG_MAPPED_NO_REPORT, FinalReport.CONTROL_FLAG_UNMAPPED]:
+        return "background-color: rgba(255, 165, 0, 0.5);"
     return "background-color: #e6f2ff;"
+
+@register.simple_tag
+def group_in_control(group: ReportGroup):
+    """Check if any report in the group has a control flag. return True if any report has a control flag, otherwise return False."""
+    in_control_float = any(
+report.control_flag == FinalReport.CONTROL_FLAG_PRESENT for report in group.reports.all()
+    )
+
+    return in_control_float

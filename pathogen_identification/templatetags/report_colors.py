@@ -197,7 +197,7 @@ def flag_control_color(flag):
         return "background-color: rgba(255, 165, 0, 0.5);"
     return "background-color: #e6f2ff;"
 
-@register.simple_tag
+@register.filter
 def group_in_control(group: ReportGroup):
     """Check if any report in the group has a control flag. return True if any report has a control flag, otherwise return False."""
     in_control_float = any(

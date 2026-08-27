@@ -43,6 +43,7 @@
 
 
 <style>
+
     .in-control-circle {
         color: #a73528ff; /* Bootstrap's success color */
         font-size: 1.2rem; /* Adjust size as needed */
@@ -608,17 +609,17 @@
                             {% endif %}
                             {% for value in group_reports %}
                             <tr class="parent {{value.row_class_name}}"  style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}" accid>
-                                <td data-title="Description" style="text-align: left;">
-                                    {% if value.first_in_group %}
-                                    {% if final_report.has_multiple %}
-                                            <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
-                                    {% else %}
-                                            <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
-                                    
-                                    {% endif %}
-                                    
-                                    {% endif %}
-                                    <a href="#" id="plot_show" >{{value.description}}</a>
+                                <td data-title="Description" style="text-align: left; padding: 8px 12px;">
+                                    <div style="padding-left: 28px; padding-top:4px; padding-bottom:4px;">
+                                        {% if value.first_in_group %}
+                                            {% if final_report.has_multiple %}
+                                                <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                            {% else %}
+                                                <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                        <a href="#" id="plot_show" style="display: inline-block; padding: 4px 6px;">{{value.description}}</a>
+                                    </div>
                                 </td>                         
                                 <td data-title="Taxid">{{value.taxid}}</td>
                                 <td data-title="accID">

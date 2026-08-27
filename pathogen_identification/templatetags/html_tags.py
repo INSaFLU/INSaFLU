@@ -26,15 +26,7 @@ def igv_app_script(directory, bamfile, indexBam):
 
 @register.simple_tag
 def flag_control(flag):
-    if flag == FinalReport.CONTROL_FLAG_PRESENT:
-        return "Taxid found in control"
-    elif flag == FinalReport.CONTROL_FLAG_MAPPED_NO_REPORT:
-        return "Mapped in control but no report"
-    elif flag == FinalReport.CONTROL_FLAG_UNMAPPED:
-        return "Unmapped in control"
-
-    else:
-        return ""
+    return FinalReport.control_flag_options.get(flag, "Unknown")
 
 
 @register.filter
@@ -63,11 +55,6 @@ def read_html_file(html_path):
 def strip_ext(string):
 
     return os.path.basename(string)
-    string = string.split(".")
-    if len(string) > 1:
-        return string[1]
-    else:
-        return string[0]
 
 
 @register.filter

@@ -1959,7 +1959,7 @@ class ProcessControler(models.Model):
         max_length=50, db_index=True, blank=True, null=True
     )  ## has the name of the process
     ## could be: sample_<pk>, project_sample_<pk>, project_<pk>
-    name_sge_id = models.CharField(
+    name_job_id = models.CharField(
         max_length=20, db_index=True, blank=True, null=True
     )  ## has the SGE id about this process
 

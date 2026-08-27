@@ -71,10 +71,6 @@ class ProcessSched(object):
 
         # Check if error occurred
         if exist_status != 0:
-            print("Error: ", stderr.decode())
-            print("stdout: ", stdout.decode())
-            print("Error: ", exist_status)
-            print("cmd: ", cmd)
 
             ## remove file
             if os.path.exists(temp_file):
@@ -352,16 +348,10 @@ class ProcessSched(object):
         vect_slurm_to_search = [c for b in vect_slurm_ids for c in str(b).split(",")]
         if len(vect_slurm_to_search) == 0:
             while self.exists_taks_running():
-                print("=" * 50 + "\n  waiting for slurm\n" + str(datetime.now()))
                 time.sleep(5)  ## wais 5 seconds
         else:
             while len(vect_slurm_to_search) > 0:
-                print("=" * 50)
-                print(
-                    "   wait for these ids: {}".format(
-                        ";".join([str(_) for _ in vect_slurm_to_search])
-                    )
-                )
+
                 vect_remove = []
                 for slurm_id in vect_slurm_to_search:
                     if self.is_finished(slurm_id):
@@ -371,7 +361,6 @@ class ProcessSched(object):
                 for slurm_id in vect_remove:
                     vect_slurm_to_search.remove(slurm_id)
 
-                print("=" * 50)
                 if len(vect_slurm_to_search) > 0:
                     time.sleep(5)  ## wais 5 seconds
         ## set the one still running
@@ -658,7 +647,6 @@ class ProcessSched(object):
             )
             job_id = self.submit_job(path_file)
         except Exception as e:
-            print("Error: ", e)
             raise Exception("Fail to submit the job.")
 
         try:
@@ -674,7 +662,6 @@ class ProcessSched(object):
             sample.is_sample_in_the_queue = True
             sample.save()
         except:
-            print("Error: ", e)
             raise Exception("Fail to submit the job.")
         return job_id
 
@@ -1399,8 +1386,6 @@ class ProcessSched(object):
                     job_id,
                 )
         except:
-            import traceback
-            traceback.print_exc()
             raise Exception("Fail to submit the job.")
         return job_id
 
@@ -1627,16 +1612,12 @@ class ProcessSched(object):
         """
 
         bash_command = (
-            # SLURM: scancel process_id
             "scancel {}".format(
                 process_id
             )
         )
 
         exit_status = os.system(bash_command)
-
-        if exit_status != 0:
-            print("Fail to kill the process")
 
         return exit_status
 
@@ -1648,7 +1629,6 @@ class ProcessSched(object):
         Kill the process in process controler.
         """
         process_controler = ProcessControler()
-
         names_processes = [
             process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
             process_controler.get_name_televir_project_sample(
@@ -1748,7 +1728,7 @@ class ProcessSched(object):
 
     def kill_processes(self, processes: List[ProcessControler]):
         """ """
-
+        
         for process in processes:
             if process.name_job_id:
                 self.kill_process(process.name_job_id)

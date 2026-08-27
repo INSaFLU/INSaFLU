@@ -25,11 +25,14 @@ $(document).on("click", "a", function (e) {
 });
 
 
-$('#id-kill-button').on('click', function(){
+$('#id-kill-button').on('click', function () {
+  
+  console.log("kill sample button clicked");
 
-    url= $('#id-modal-body-kill-sample').attr("kill-single-value-url");
-    sample_id = $('#id-modal-body-kill-sample').attr('pk');
-    token = $('#id-modal-body-kill-sample').attr('csrfmiddlewaretoken');
+  url= $('#id-modal-body-kill-sample').attr("kill-single-value-url");
+  sample_id = $('#id-modal-body-kill-sample').attr('pk');
+  token = $('#id-modal-body-kill-sample').attr('csrfmiddlewaretoken');
+  console.log("kill sample", sample_id, token, url);
 
 	$.ajax({
         url: url,
@@ -53,8 +56,7 @@ $('#id-kill-button').on('click', function(){
                 '<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>' +
                 '</div>');
             }
-          }
-          else{
+          } else {
         	/// add message with informaton
         	  $('#id_messages_remove').append('<div class="alert alert-dismissible alert-warning">' +
         		'The sample \'' + $('#id-modal-body-kill-sample').attr('ref_name') + '\' was not terminated.' +

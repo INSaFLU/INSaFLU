@@ -3007,6 +3007,11 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             sample=sample, run=None
         ).order_by("-date_created").first()
 
+        if latest_report_aggregate is None:
+            latest_report_aggregate = ReportAggregateEmpty()    
+
+        clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json) if latest_report_aggregate.overlap_heatmap_path else None
+
         report_groups = ReportGroup.objects.filter(
             aggregator=latest_report_aggregate
         )
@@ -3016,14 +3021,13 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             for report_group in report_groups
         }
 
-
         reported_taxa = {
             report_group: report_group.main_species for report_group in report_groups
         }
 
         # group reports by main species and sort by private reads availability
-        report_taxa = [
-            {
+        report_taxa = {
+            species: {
                 "species": species,
                 "report_groups": {
                     rg: sorted_reports[rg] for rg in report_groups if rg.main_species == species
@@ -3031,10 +3035,34 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
                 "total_private_counts": sum(
                     rg.private_counts_safe for rg in report_groups if rg.main_species == species
                 )
-                }
+            }
             for species in set(reported_taxa.values()) if species is not None
-        ]
+        }
         
+        if latest_report_aggregate.overlap_heatmap_path is not None:
+
+            group_map = {}
+
+            for taxon_report in report_taxa.values():
+                for gp in taxon_report["report_groups"].keys():
+                    group_map[gp.name] = taxon_report['species']
+                taxon_report['taxon_heatmap_json'] = []
+            
+            for cell in latest_report_aggregate.overlap_heatmap_json:
+                if group_map.get(cell['x']) == group_map.get(cell['y']):
+                    taxon = group_map.get(cell['x'])
+                    if taxon is None:
+                        continue
+                    report_taxa[taxon]['taxon_heatmap_json'].append(cell)
+            
+            for taxon_report in report_taxa.values():
+                if len(taxon_report['taxon_heatmap_json']) == 0 or len(taxon_report['report_groups']) == 1:
+                    taxon_report['taxon_heatmap_json'] = None
+                else:
+                    taxon_report['taxon_heatmap_json'] = json.dumps(taxon_report['taxon_heatmap_json'])
+
+        report_taxa = list(report_taxa.values())
+
         if any(species is None for species in reported_taxa.values()):
             report_taxa.append({
                 "species": {"name": "Unassigned", "taxid": None},
@@ -3045,7 +3073,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
                     rg.private_counts_safe for rg in report_groups if rg.main_species is None
                 )
             })
-
+        
         report_taxa = sorted(report_taxa, key=lambda x: len(x["report_groups"]), reverse=True)
         report_taxa = sorted(report_taxa, key=lambda x: x["total_private_counts"], reverse=True)
 
@@ -3053,15 +3081,11 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             report_group.private_reads_available for report_group in report_groups
         )
 
-        if latest_report_aggregate is None:
-            latest_report_aggregate = ReportAggregateEmpty()    
-
-        clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json) if latest_report_aggregate.overlap_heatmap_path else None
-
         #### graph
         graph_progress = TreeProgressGraph(sample)
         # graph_progress.generate_graph()
         graph_json, graph_id = graph_progress.get_graph_data()
+
         ####
         runs = latest_report_aggregate.runs.all()
         runs_pipeline = runs.filter(run_type=RunMain.RUN_TYPE_PIPELINE)

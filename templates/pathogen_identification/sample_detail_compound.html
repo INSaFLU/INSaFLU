@@ -133,7 +133,6 @@
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.03);
         margin-bottom: 20px;
-        border: 1px solid #e6edf3;
         display: none;
         transform: translateY(0);    }
 
@@ -144,7 +143,6 @@
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.03);
         margin-bottom: 20px;
-        border: 1px solid #e6edf3;
         display: table-row-group;
         transform: translateY(0);
     }
@@ -253,6 +251,7 @@
     }
 
     .custom-section {
+        border-radius: 24px;
         font-size: 1rem;
         color: #234;
         margin-right: 18px;
@@ -290,7 +289,9 @@
         box-shadow: none !important;
     }
 
-    #table-wrapper {
+
+
+    .card {
         border: none !important;
         background: transparent !important;
         box-shadow: none !important;
@@ -478,9 +479,9 @@
                             {% endif %}
                             <th class = "extra-column">class. success</th>
                             <th class = "extra-column">mapping success</th>                
-                            <th>Warning</th>
+                            <th class = "extra-column">Warning</th>
                             {% if in_control %}
-                            <th>Control</th>
+                            <th class = "extra-column">Control</th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -510,11 +511,29 @@
                                         </span>
                                         <span class="badge badge-info">
                                             Total private reads: {{ species_bundle.total_private_counts|default:"0" }}
+                                        </span>
+                                        {% if species_bundle.taxon_heatmap_json %}
+                                        <span class="badge badge-info">
+                                            <a href="#" id="showButton" class="custom-link"> Taxon Read Overlap</a>
+                                        </span>
+                                        {% endif %}
                                     </div>
                                     
                                 </div>
                             </td>
                         </tr>
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="16">
+                                <div id="plot-{{species_bundle.species}}" class="plot-container">
+                                
+                                </div>
+                                <script>
+                                    createHeatmap('{{ species_bundle.taxon_heatmap_json|safe }}', "plot-{{species_bundle.species}}");
+                                </script>
+
+                            </td>
+                        </tr>
+
                         {% for final_report, group_reports in species_bundle.report_groups.items %}
                             <tbody class="group-wrapper" display="none;" group-name="{{final_report.name}}" data-species="{{ species_bundle.species.taxid }}">
                             <tr>
@@ -634,10 +653,10 @@
                                     {{value.classification_success}}</td>
                                 <td data-title="mapping success" style="{% success_count_color value.mapping_success %}" class = "extra-column">
                                     {{value.mapping_success}}</td>
-                                <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
+                                <td data-title="Warning" class = "extra-column" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
                                     {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                                 {% if in_control %}
-                                <td data-title="Control" style="{% flag_control_color value.control_flag %}">
+                                <td data-title="Control" style="{% flag_control_color value.control_flag %}" class = "extra-column">
                                     {{ value.control_flag_str }}</td>
                                 {% endif %}
                             </tr>

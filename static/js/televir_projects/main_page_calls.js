@@ -106,6 +106,7 @@ $('.sample-deploy').on('click', function () {
             }
             else if (data["is_ok"] == true && data["is_deployed"] == true) {
                 alert("Runs deployed");
+                location.reload();
             }
 
         }
@@ -218,7 +219,6 @@ $(".kill-runs").click(function (e) {
 
     // get checked samples rows
     var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
-    var remember = document.getElementById('checkBoxAll');
 
     if (checkedRows_samples.length === 0) {
         // change id-label-remove-all text
@@ -254,6 +254,8 @@ $("#deploypi_mapping_btn").click(function (e) {
             }
             else if (data["is_ok"] == true && data["is_deployed"] == true) {
                 alert("Runs deployed");
+                location.reload();
+
             }
             $.unblockUI();
         }
@@ -360,6 +362,7 @@ $("#deploypi_btn").click(function (e) {
             }
             else if (data["is_ok"] == true && data["is_deployed"] == true) {
                 alert("Runs deployed");
+                location.reload();
             }
             $.unblockUI();
         }

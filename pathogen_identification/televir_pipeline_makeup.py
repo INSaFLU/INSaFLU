@@ -47,7 +47,7 @@ def excluded_steps_decorator(function):
 class PipelineTreeBase:
     ROOT = "root"
     READ_CLASSIFICATION_SPECIAL_STEP = "ASSEMBLY_SPECIAL"
-    VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
+    #VIRAL_ENRICHMENT_SPECIAL_STEP = "VIRAL_ENRICHMENT"
     MAP_FILTERING_SPECIAL_STEP = "MAP_FILTERING"
     SINK = "sink"
     dependencies_graph_root = SINK
@@ -59,7 +59,6 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
         self.dependencies_graph_edges_metagenomics = {
             CS.PIPELINE_NAME_extra_qc: [self.ROOT],
             CS.PIPELINE_NAME_viral_enrichment: [self.ROOT, CS.PIPELINE_NAME_extra_qc],
-            self.VIRAL_ENRICHMENT_SPECIAL_STEP: [self.ROOT, CS.PIPELINE_NAME_extra_qc],
             CS.PIPELINE_NAME_host_depletion: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
@@ -69,16 +68,17 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 CS.PIPELINE_NAME_host_depletion,
-                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_viral_enrichment,
             ],
 
             CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
 
             CS.PIPELINE_NAME_read_classification: [
                 self.ROOT,
+                CS.PIPELINE_NAME_assembly,
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_extra_qc,
-                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_viral_enrichment,
                 CS.PIPELINE_NAME_host_depletion,
             ],
 
@@ -92,33 +92,33 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_read_classification,
                 CS.PIPELINE_NAME_host_depletion,
-                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_viral_enrichment,
             ],
             CS.PIPELINE_NAME_map_filtering: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 CS.PIPELINE_NAME_host_depletion,
-                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_viral_enrichment,
             ],
             self.MAP_FILTERING_SPECIAL_STEP: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 CS.PIPELINE_NAME_host_depletion,
-                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_viral_enrichment,
             ],
             CS.PIPELINE_NAME_request_mapping: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 self.MAP_FILTERING_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
-                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_viral_enrichment,
             ],
             CS.PIPELINE_NAME_metagenomics_screening: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
                 self.MAP_FILTERING_SPECIAL_STEP,
                 CS.PIPELINE_NAME_host_depletion,
-                self.VIRAL_ENRICHMENT_SPECIAL_STEP,
+                CS.PIPELINE_NAME_viral_enrichment,
             ],
             self.SINK: [
                 CS.PIPELINE_NAME_request_mapping,
@@ -159,9 +159,6 @@ class Pipeline_Makeup(PipelineTreeBase):
         """
         dpath = [
             x
-            .replace(
-                self.VIRAL_ENRICHMENT_SPECIAL_STEP, CS.PIPELINE_NAME_viral_enrichment
-            )
             .replace(self.MAP_FILTERING_SPECIAL_STEP, CS.PIPELINE_NAME_map_filtering)
             for x in dpath
             if x not in [self.ROOT, self.SINK]

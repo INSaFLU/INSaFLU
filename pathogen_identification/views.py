@@ -3042,6 +3042,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         }
         
         if latest_report_aggregate.overlap_heatmap_path is not None:
+            print("Generating taxon heatmap JSON...")
 
             group_map = {}
 
@@ -3050,12 +3051,16 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
                     group_map[gp.name] = taxon_report['species']
                 taxon_report['taxon_heatmap_json'] = []
             
-            for cell in latest_report_aggregate.overlap_heatmap_json:
-                if group_map.get(cell['x']) == group_map.get(cell['y']):
-                    taxon = group_map.get(cell['x'])
-                    if taxon is None:
-                        continue
-                    report_taxa[taxon]['taxon_heatmap_json'].append(cell)
+            if latest_report_aggregate.overlap_heatmap_json is not None:
+                for cell in latest_report_aggregate.overlap_heatmap_json:
+                    if group_map.get(cell['x']) == group_map.get(cell['y']):
+                        taxon = group_map.get(cell['x'])
+                        if taxon is None:
+                            continue
+                        report_taxa[taxon]['taxon_heatmap_json'].append(cell)
+            
+            print("Taxon heatmap JSON generated.")
+            print(report_taxa)
             
             for taxon_report in report_taxa.values():
                 if len(taxon_report['taxon_heatmap_json']) == 0 or len(taxon_report['report_groups']) == 1:

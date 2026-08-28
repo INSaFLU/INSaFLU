@@ -523,6 +523,7 @@
                                 </div>
                             </td>
                         </tr>
+                        {% if species_bundle.taxon_heatmap_json %}
                         <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
                             <td colspan="16">
                                 <div id="plot-{{species_bundle.species}}" class="plot-container">
@@ -534,7 +535,7 @@
 
                             </td>
                         </tr>
-
+                        {% endif %}
                         {% for final_report, group_reports in species_bundle.report_groups.items %}
                             <tbody class="group-wrapper" display="none;" group-name="{{final_report.name}}" data-species="{{ species_bundle.species.taxid }}">
                             <tr>
@@ -924,10 +925,6 @@
                 const expanded = btn.getAttribute("aria-expanded") === "true";
                 const newExpanded = !expanded;
 
-                console.log(
-                    `Toggling species ${speciesId} -> expanded=${newExpanded}`
-                );
-
                 let tbody = document.querySelector(
                     `.group-wrapper[data-species="${speciesId}"]`
                 );
@@ -937,10 +934,6 @@
                         `.group-wrapper[data-species="${speciesId}"]`
                     )
                     .forEach(function (tbody) {
-
-                        console.log(
-                            `  Toggling group: ${tbody.getAttribute("group-name")}`
-                        );
 
                         tbody.style.display = newExpanded
                             ? "table-row-group"

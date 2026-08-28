@@ -3012,9 +3012,12 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
 
         clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json) if latest_report_aggregate.overlap_heatmap_path else None
 
-        report_groups = ReportGroup.objects.filter(
-            aggregator=latest_report_aggregate
-        )
+        if latest_report_aggregate is None:
+            latest_report_aggregate = ReportAggregateEmpty()
+        else:
+            report_groups = ReportGroup.objects.filter(
+                aggregator=latest_report_aggregate
+            )
 
         sorted_reports = {
             report_group: ReportList(list(report_group.reports.all())).set_private_reads(report_group).sort_group_by_private_reads()

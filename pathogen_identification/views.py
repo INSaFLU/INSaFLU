@@ -3040,6 +3040,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             }
             for species in set(reported_taxa.values()) if species is not None
         }
+        print(latest_report_aggregate.overlap_heatmap_path)
         
         if latest_report_aggregate.overlap_heatmap_path is not None:
             print("Generating taxon heatmap JSON...")

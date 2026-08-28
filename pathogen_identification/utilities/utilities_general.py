@@ -20,6 +20,17 @@ from pathogen_identification.constants_settings import ConstantsSettings as CS
 from pathogen_identification.models import Projects, RunMain
 
 
+def differences_tuple_list(lista, listb):
+    """
+    Return the differences between two lists
+    """
+    list_a = [tuple([str(x) for x in y]) for y in lista]
+    list_a = set(list_a)
+
+    list_b = [tuple([str(x) for x in y]) for y in listb]
+    list_b = set(list_b)
+    return list(list_a.symmetric_difference(list_b))
+
 def rename_columns_to_standard(
     df: pd.DataFrame,
     taxid_col: Optional[str] = None,

@@ -981,7 +981,8 @@ def translate_classification_success(success):
 
 
 def summarize_description(description, max_length=100):
-
+    if description is None:
+        return ""
     if len(description) > max_length:
         return description[:max_length]
 

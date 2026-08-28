@@ -66,7 +66,7 @@ $("tr.parent").find("A#plot_show").click(function(e) {
 
     if (e.target.tagName === "A" && e.target.id === "plot_show") {
         e.preventDefault();
-        var parent_tr = e.target.parentNode.parentNode;
+        var parent_tr = e.target.parentNode.parentNode.parentNode;
         var child_tr = nextTr(parent_tr);
         $(child_tr).toggleClass("active");
     }

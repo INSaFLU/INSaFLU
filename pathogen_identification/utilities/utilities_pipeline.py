@@ -99,16 +99,20 @@ class PipelineTree:
         df = parameter_util.retrace_from_leaf(node)
         df = df.dropna(subset = 'node_type')
         new_df = []
+
         module = None
         software = None
         parameter = None
+
         for _idx, row in df.iterrows():
             if row.node_type == "module":
                 module = row['name']
-                software = row['value']
+                
             elif row.node_type == "param":
                 parameter = row['value']
+                software = row['name'].replace("_ARGS","").lower()
                 new_df.append((module, software, parameter))
+
         new_df = pd.DataFrame(new_df, columns=["module", "software", "value"])
         local_paths = self.get_all_graph_paths()
         
@@ -119,9 +123,11 @@ class PipelineTree:
                 path_df.value
             ) == set(new_df.value):
                 return leaf_index
+            
         raise ValueError("Node not found in index")
 
     def __eq__(self, other):
+        from pathogen_identification.utilities.utilities_general import differences_tuple_list
         diff_nodes = differences_tuple_list(self.nodes, other.nodes)
         diff_edges = differences_tuple_list(self.edges, other.edges)
 

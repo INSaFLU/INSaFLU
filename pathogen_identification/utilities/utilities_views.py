@@ -15,7 +15,7 @@ from fluwebvirus.settings import MEDIA_URL, STATIC_ROOT
 from managing_files.models import Sample as INSaFLU_Sample
 from pathogen_identification.constants_settings import \
     ConstantsSettings as PIConstantsSettings
-from pathogen_identification.models import (ContigClassification, FinalReport,
+from pathogen_identification.models import (ContigClassification, FinalReport, RawReferenceCompoundModel,
                                             GroupReportData, ParameterSet,
                                             PIProject_Sample, Projects,
                                             RawReference,
@@ -262,8 +262,9 @@ class SampleReadsRetrieve:
                     continue
 
                 host_depletion_software = params_df.loc[
-                    ConstantsSettings.PIPELINE_NAME_host_depletion, "software"
+                    ConstantsSettings.PIPELINE_NAME_host_depletion, "software_name"
                 ]
+
                 host_depletion_parameters = params_df.loc[
                     ConstantsSettings.PIPELINE_NAME_host_depletion, "value"
                 ]
@@ -281,7 +282,7 @@ class SampleReadsRetrieve:
                 if ConstantsSettings.PIPELINE_NAME_viral_enrichment in params_df.index:
 
                     enrichment_software = params_df.loc[
-                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                        ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software_name"
                     ]
                     enrichment_parameters = params_df.loc[
                         ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
@@ -303,7 +304,7 @@ class SampleReadsRetrieve:
                     psample.qc = True
                     qc_multiple = MultipleQCSoftware([])
                     for row in qc_block.iterrows():
-                        qc_software = row[1]["software"]
+                        qc_software = row[1]["software_name"]
                         qc_parameters = row[1]["value"]
                         software_qc = QCSoftware(qc_software, qc_parameters)
                         qc_multiple.add_software(software_qc)
@@ -319,7 +320,7 @@ class SampleReadsRetrieve:
                     continue
 
                 enrichment_software = params_df.loc[
-                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software"
+                    ConstantsSettings.PIPELINE_NAME_viral_enrichment, "software_name"
                 ]
                 enrichment_parameters = params_df.loc[
                     ConstantsSettings.PIPELINE_NAME_viral_enrichment, "value"
@@ -345,7 +346,7 @@ class SampleReadsRetrieve:
                     psample.qc = True
                     qc_multiple = MultipleQCSoftware([])
                     for row in qc_block.iterrows():
-                        qc_software = row[1]["software"]
+                        qc_software = row[1]["software_name"]
                         qc_parameters = row[1]["value"]
                         software_qc = QCSoftware(qc_software, qc_parameters)
                         qc_multiple.add_software(software_qc)
@@ -372,7 +373,7 @@ class SampleReadsRetrieve:
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
                 qc_multiple = MultipleQCSoftware([])
                 for row in qc_block.iterrows():
-                    qc_software = row[1]["software"]
+                    qc_software = row[1]["software_name"]
                     qc_parameters = row[1]["value"]
                     software_qc = QCSoftware(qc_software, qc_parameters)
                     qc_multiple.add_software(software_qc)
@@ -1168,6 +1169,27 @@ def set_control_reports(project_pk: int):
             project=project, is_control=True
         )
 
+        control_compound_raw_references = RawReferenceCompoundModel.objects.filter(
+            run__sample__in=control_samples
+        )
+
+        control_unmapped = control_compound_raw_references.filter(
+            mapped_raw_reference__isnull=True
+        ).distinct("taxid").values_list("taxid", flat=True)
+        control_unmapped = set(control_unmapped)
+
+        control_mapped_no_report = control_compound_raw_references.filter(
+            mapped_raw_reference__isnull=False,
+            mapped_final_report__isnull=True,
+        ).distinct("taxid").values_list("taxid", flat=True)
+        control_mapped_no_report = set(control_mapped_no_report)
+
+        control_mapped_with_report = control_compound_raw_references.filter(
+            mapped_raw_reference__isnull=False,
+            mapped_final_report__isnull=False,
+        ).distinct("taxid").values_list("taxid", flat=True)
+        control_mapped_with_report = set(control_mapped_with_report)
+
         control_reports = FinalReport.objects.filter(
             sample__in=control_samples
         ).distinct("taxid")
@@ -1180,8 +1202,12 @@ def set_control_reports(project_pk: int):
         )
 
         for sample_report in other_reports:
-            if sample_report.taxid in control_report_taxids_set:
+            if sample_report.taxid in control_mapped_with_report:
                 sample_report.control_flag = FinalReport.CONTROL_FLAG_PRESENT
+            elif sample_report.taxid in control_mapped_no_report:
+                sample_report.control_flag = FinalReport.CONTROL_FLAG_MAPPED_NO_REPORT
+            elif sample_report.taxid in control_unmapped:
+                sample_report.control_flag = FinalReport.CONTROL_FLAG_UNMAPPED
             else:
                 sample_report.control_flag = FinalReport.CONTROL_FLAG_NONE
 
@@ -1407,7 +1433,7 @@ class ReportSorter:
         return self.analysis_empty == False
 
     def build_tree(self):
-
+        print(self.reports_available)
         if self.reports_available:
             self.overlap_manager.build_tree()
 
@@ -1741,20 +1767,22 @@ class ReportSorter:
         register in table
         """
 
+
+        self.sort_reports_save()
+
         sorted_reports = self.get_reports_compound()
         excluded_reports_exist = self.check_excluded_exist()
         empty_reports = self.get_reports_empty()
 
         if excluded_reports_exist and self.analysis_empty is False:
-
             if len(empty_reports.group_list) > 0:
                 sorted_reports.append(empty_reports)
 
-        self.build_tree()
+
         clade_heatmap_json = self.clade_heatmap_json(
             to_keep=[report_group.name for report_group in sorted_reports]
         )
-
+        print(sorted_reports)
         #########
         private_reads_available = False
         for group in sorted_reports:
@@ -1809,10 +1837,12 @@ class ReportSorter:
                 )
                 report_group.save()
                 taxa = []
+                reports = []
 
                 for report in group.group_list:
                     actual_report = FinalReport.objects.get(pk=report.report_pk)
                     report_group.reports.add(actual_report)
+                    reports.append(actual_report)
 
                     report_data = GroupReportData.objects.create(
                         report = actual_report,
@@ -1827,6 +1857,9 @@ class ReportSorter:
                         report_aggregate.runs.add(run)
 
                     taxa.append(actual_report.taxid)
+
+                if len(taxa) == 0:
+                    continue
                 
                 references = {
                     taxid: ReferenceTaxid.objects.get(taxid=taxid) for taxid in taxa
@@ -1836,12 +1869,12 @@ class ReportSorter:
                 }
                 from collections import Counter
                 species_counter = Counter(species.values())
-                if len(species_counter) > 0:
-                    most_common_species, most_common_count = species_counter.most_common(1)[0]
-                    if most_common_count / len(species) > 0.5:
-                        report_group.main_species = most_common_species
-                        report_group.main_species_percentage = most_common_count / len(species)
-                        report_group.save()
+                reports_sorted_cov = sorted(reports, key=lambda x: x.coverage, reverse=True)
+                
+                report_group.main_species = species[reports_sorted_cov[0].taxid]
+                report_group.main_species_percentage = species_counter[report_group.main_species] / len(species)
+                report_group.save()
+
 
     def sort_reports_save(self, force=False):
         """
@@ -1867,7 +1900,6 @@ class ReportSorter:
 
         clades_to_keep = []
 
-        ## plot pairwise shared reads
         for group in overlap_groups:
             group_df = group[1]
 
@@ -2159,9 +2191,9 @@ class ReportSorter:
 
         for report_group in reports:
             new_list = []
-            for wapped_report in report_group.group_list:
-                report_compound = FinalReportCompound(wapped_report)
-                report_compound.update_private_reads(wapped_report.private_reads)
+            for wrapped_report in report_group.group_list:
+                report_compound = FinalReportCompound(wrapped_report)
+                report_compound.update_private_reads(wrapped_report.private_reads)
                 new_list.append(report_compound)
 
             report_group.group_list = new_list
@@ -2196,7 +2228,7 @@ class ReportSorter:
 
         return report_group
 
-
+ 
 def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     """
     calculate reports overlaps
@@ -2205,12 +2237,13 @@ def calculate_reports_overlaps(sample: PIProject_Sample, force=False):
     report_layout_params = TelevirParameters.get_report_layout_params(
         project_pk=sample.project.pk
     )
+
+    final_reports = final_report_best_cov_by_accid(final_reports)
+
     report_sorter = ReportSorter(
         sample, final_reports, report_layout_params, force=force
     )
 
-    report_sorter.build_tree()
-    report_sorter.sort_reports_save()
     report_sorter.reports_aggregate_register(report_layout_params)
 
 

@@ -1017,13 +1017,13 @@ def Project_explify_delete_external(request):
         return JsonResponse(data)
 
 
-@login_required
 @require_POST
 def kill_televir_project_sample(request):
     """
     kill all processes a sample, set queued to false
     """
-
+    print("kill_televir_project_sample")
+    
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
@@ -1042,12 +1042,13 @@ def kill_televir_project_sample(request):
             ],
         )
 
+        print(runs_params)
         for single_run_param in runs_params:
             try:  # kill process
 
                 if single_run_param.status == ParameterSet.STATUS_RUNNING:
                     single_run_param.delete_run_data()
-
+                
                 process_SGE.kill_televir_process_controler_runs(
                     user.pk, project.pk, sample.pk, single_run_param.leaf.pk
                 )
@@ -1070,7 +1071,8 @@ def kill_televir_project_tree_sample(request):
     """
     kill all processes a sample, set queued to false
     """
-
+    print("kill_televir_project_tree_sample")
+    print(request.POST)
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
@@ -1089,6 +1091,8 @@ def kill_televir_project_tree_sample(request):
             ],
         )
         killed = 0
+        print("## runs_params")
+        print(runs_params)
 
         for single_run_param in runs_params:
             try:  # kill process
@@ -1106,6 +1110,13 @@ def kill_televir_project_tree_sample(request):
                 print("ProcessControler.DoesNotExist")
                 pass
 
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                print(e)
+                print("Exception")
+                pass
+
             single_run_param.status = ParameterSet.STATUS_KILLED
             single_run_param.save()
 
@@ -1113,6 +1124,7 @@ def kill_televir_project_tree_sample(request):
             data["is_deployed"] = True
 
         data["is_ok"] = True
+        print(data)
         return JsonResponse(data)
 
 
@@ -1133,6 +1145,7 @@ def kill_televir_project_all_sample(request):
         project = Projects.objects.get(id=int(project_id))
         sample_ids = request.POST.getlist("sample_ids[]")
         check_box_all_checked = request.POST.get("check_box_all_checked", False)
+
         if check_box_all_checked:
             sample_ids = []
         else:
@@ -1522,7 +1535,6 @@ def create_teleflu_project(request):
             data["project_name"] = teleflu_project.name
 
         except Exception as e:
-            print("Error creating teleflu project")
             print(e)
             data["is_error"] = True
             return JsonResponse(data)
@@ -1749,7 +1761,6 @@ def possible_project_tags(request):
     tags not yet assigned to this project"""
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "tags": []}
-        print(request.POST)
         user = request.user
         project_id = int(request.POST.get("project_id", 0))
         project = Projects.objects.filter(id=project_id, owner=user).first()
@@ -3048,93 +3059,98 @@ def IGV_display(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False}
         if request.method == "GET":
-            sample_pk = request.GET.get("sample_pk")
-            run_pk = request.GET.get("run_pk")
-            reference = request.GET.get("accid")
-            unique_id = request.GET.get("unique_id")
+            try:
+                sample_pk = request.GET.get("sample_pk")
+                run_pk = request.GET.get("run_pk")
+                reference = request.GET.get("accid")
+                unique_id = request.GET.get("unique_id")
 
-            sample = PIProject_Sample.objects.get(pk=int(sample_pk))
-            sample_name = sample.name
-            run = RunMain.objects.get(pk=int(run_pk))
+                sample = PIProject_Sample.objects.get(pk=int(sample_pk))
+                sample_name = sample.name
+                run = RunMain.objects.get(pk=int(run_pk))
 
-            ref_map = ReferenceMap_Main.objects.get(
-                reference=unique_id, sample=sample, run=run
-            )
-
-            def remove_pre_static(path: str) -> str:
-                cwd = os.getcwd()
-                if path.startswith(cwd):
-                    path = path[len(cwd) :]
-
-                path = path.replace(STATIC_ROOT, STATIC_URL)
-
-                return path
-
-            #################################################
-            ### bam file
-            path_name_bam = remove_pre_static(
-                ref_map.bam_file_path,
-            )
-            path_name_bai = remove_pre_static(
-                ref_map.bai_file_path,
-            )
-            path_name_reference = remove_pre_static(
-                ref_map.fasta_file_path,
-            )
-            path_name_reference_index = remove_pre_static(
-                ref_map.fai_file_path,
-            )
-            path_name_vcf = remove_pre_static(ref_map.vcf)
-
-            data["is_ok"] = True
-            data["path_bam"] = mark_safe(request.build_absolute_uri(path_name_bam))
-
-            data["path_reference"] = mark_safe(
-                request.build_absolute_uri(path_name_reference)
-            )
-            data["path_reference_index"] = mark_safe(
-                request.build_absolute_uri(path_name_reference_index)
-            )
-            data["reference_name"] = reference
-
-            #### other files
-            data["bam_file_id"] = mark_safe(
-                '<strong>Bam file:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                    path_name_bam,
-                    os.path.basename(path_name_bam),
-                    os.path.basename(path_name_bam),
+                ref_map = ReferenceMap_Main.objects.get(
+                    reference=unique_id, sample=sample, run=run
                 )
-            )
-            data["bai_file_id"] = mark_safe(
-                '<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                    path_name_bai,
-                    os.path.basename(path_name_bai),
-                    os.path.basename(path_name_bai),
-                )
-            )
-            data["vcf_file_id"] = mark_safe(
-                '<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                    path_name_vcf,
-                    os.path.basename(path_name_vcf),
-                    os.path.basename(path_name_vcf),
-                )
-            )
-            data["reference_id"] = mark_safe(
-                '<strong>Reference:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                    path_name_reference,
-                    os.path.basename(path_name_reference),
-                    os.path.basename(path_name_reference),
-                )
-            )
-            data["reference_index_id"] = mark_safe(
-                '<strong>Ref. index:</strong> <a href="{}" download="{}"> {}</a>'.format(
-                    path_name_reference_index,
-                    os.path.basename(path_name_reference_index),
-                    os.path.basename(path_name_reference_index),
-                )
-            )
 
-            data["static_dir"] = run.static_dir
-            data["sample_name"] = sample_name
+                def remove_pre_static(path: str) -> str:
+                    cwd = os.getcwd()
+                    if path.startswith(cwd):
+                        path = path[len(cwd) :]
+
+                    path = path.replace(STATIC_ROOT, STATIC_URL)
+
+                    return path
+
+                #################################################
+                ### bam file
+                path_name_bam = remove_pre_static(
+                    ref_map.bam_file_path,
+                )
+                path_name_bai = remove_pre_static(
+                    ref_map.bai_file_path,
+                )
+                path_name_reference = remove_pre_static(
+                    ref_map.fasta_file_path,
+                )
+                path_name_reference_index = remove_pre_static(
+                    ref_map.fai_file_path,
+                )
+                path_name_vcf = remove_pre_static(ref_map.vcf)
+
+                data["is_ok"] = True
+                data["path_bam"] = mark_safe(request.build_absolute_uri(path_name_bam))
+
+                data["path_reference"] = mark_safe(
+                    request.build_absolute_uri(path_name_reference)
+                )
+                data["path_reference_index"] = mark_safe(
+                    request.build_absolute_uri(path_name_reference_index)
+                )
+                data["reference_name"] = reference
+
+                #### other files
+                data["bam_file_id"] = mark_safe(
+                    '<strong>Bam file:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                        path_name_bam,
+                        os.path.basename(path_name_bam),
+                        os.path.basename(path_name_bam),
+                    )
+                )
+                data["bai_file_id"] = mark_safe(
+                    '<strong>Bai file:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                        path_name_bai,
+                        os.path.basename(path_name_bai),
+                        os.path.basename(path_name_bai),
+                    )
+                )
+                data["vcf_file_id"] = mark_safe(
+                    '<strong>Vcf file:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                        path_name_vcf,
+                        os.path.basename(path_name_vcf),
+                        os.path.basename(path_name_vcf),
+                    )
+                )
+                data["reference_id"] = mark_safe(
+                    '<strong>Reference:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                        path_name_reference,
+                        os.path.basename(path_name_reference),
+                        os.path.basename(path_name_reference),
+                    )
+                )
+                data["reference_index_id"] = mark_safe(
+                    '<strong>Ref. index:</strong> <a href="{}" download="{}"> {}</a>'.format(
+                        path_name_reference_index,
+                        os.path.basename(path_name_reference_index),
+                        os.path.basename(path_name_reference_index),
+                    )
+                )
+
+                data["static_dir"] = run.static_dir
+                data["sample_name"] = sample_name
+            except Exception as e:
+
+                data["is_error"] = True
+                data["error_message"] = "Error in IGV_display: {}".format(e)
 
         return JsonResponse(data)

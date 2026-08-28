@@ -12,7 +12,41 @@ from pathogen_identification.utilities.utilities_general import reverse_dict_of_
 class PhyloTreeManager:
     def __init__(self, tree):
         self.tree: Bio.Phylo.BaseTree.Tree = tree
-        self.nx_tree: nx.Graph = Phylo.to_networkx(tree)
+        self.nx_tree = nx.DiGraph()
+        for clade in self.tree.find_clades(order="level"):
+            for child in clade.clades:
+                self.nx_tree.add_edge(clade, child)
+                
+        self.node_leaves_cache = {}
+        self.root_nodes = [node for node in self.tree.get_nonterminals() if node == self.tree.root]
+        self._rebuild_node_leaves_cache()  
+        self.all_nodes = list(self.tree.find_clades(order="level")) 
+
+    def get_node_leaves(self, node):
+        return self.node_leaves_cache.get(node, [])
+
+    def node_in_digraph(self, node):
+        return node in self.nx_tree.nodes()
+
+    def get_leaves_parted(self, node):
+        if self.nx_tree.out_degree(node) == 0:
+            return [self.node_leaves_cache.get(node, [node])]
+        return [self.node_leaves_cache.get(child, []) for child in self.nx_tree.successors(node)]
+
+    def _rebuild_node_leaves_cache(self):
+        self.node_leaves_cache = {}
+        def _dfs(node):
+            if self.nx_tree.out_degree(node) == 0:
+                leaves = [node]
+            else:
+                leaves = []
+                for child in self.nx_tree.successors(node):
+                    leaves.extend(_dfs(child))
+            self.node_leaves_cache[node] = leaves
+            return leaves
+        for root in self.root_nodes:
+            _dfs(root)
+
 
     def leaves_use(self, node: Phylo.BaseTree.Clade, leaves=[]):
         """
@@ -37,11 +71,6 @@ class PhyloTreeManager:
                 self.all_node_children(child, children)
         return children
 
-    def get_node_leaves(self, node):
-        """
-        Return list of leaves for a node"""
-
-        return self.leaves_use(node, leaves=[])
 
     def get_node_children(self, node):
         """

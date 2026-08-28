@@ -44,6 +44,14 @@
 
 <style>
 
+    .in-control-circle {
+        color: #a73528ff; /* Bootstrap's success color */
+        font-size: 1.2rem; /* Adjust size as needed */
+        font-weight: bold;
+        font-color: #e8e8e8ff; /* Bootstrap's success color */
+        margin-right: 8px; /* Space between the icon and the next element */
+    }
+
     .species-toggle-btn {
         margin-right: 12px;
         flex: 0 0 auto;
@@ -126,7 +134,6 @@
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.03);
         margin-bottom: 20px;
-        border: 1px solid #e6edf3;
         display: none;
         transform: translateY(0);    }
 
@@ -137,7 +144,6 @@
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.03);
         margin-bottom: 20px;
-        border: 1px solid #e6edf3;
         display: table-row-group;
         transform: translateY(0);
     }
@@ -246,6 +252,7 @@
     }
 
     .custom-section {
+        border-radius: 24px;
         font-size: 1rem;
         color: #234;
         margin-right: 18px;
@@ -283,7 +290,9 @@
         box-shadow: none !important;
     }
 
-    #table-wrapper {
+
+
+    .card {
         border: none !important;
         background: transparent !important;
         box-shadow: none !important;
@@ -471,9 +480,9 @@
                             {% endif %}
                             <th class = "extra-column">class. success</th>
                             <th class = "extra-column">mapping success</th>                
-                            <th>Warning</th>
+                            <th class = "extra-column">Warning</th>
                             {% if in_control %}
-                            <th>Control</th>
+                            <th class = "extra-column">Control</th>
                             {% endif %}
                         </tr>
                     </thead>
@@ -503,11 +512,30 @@
                                         </span>
                                         <span class="badge badge-info">
                                             Total private reads: {{ species_bundle.total_private_counts|default:"0" }}
+                                        </span>
+                                        {% if species_bundle.taxon_heatmap_json %}
+                                        <span class="badge badge-info">
+                                            <a href="#" id="showButton" class="custom-link"> Taxon Read Overlap</a>
+                                        </span>
+                                        {% endif %}
                                     </div>
                                     
                                 </div>
                             </td>
                         </tr>
+                        {% if species_bundle.taxon_heatmap_json %}
+                        <tr class="row-to-toggle" id="rowToToggle" style="display: none;">
+                            <td colspan="16">
+                                <div id="plot-{{species_bundle.species}}" class="plot-container">
+                                
+                                </div>
+                                <script>
+                                    createHeatmap('{{ species_bundle.taxon_heatmap_json|safe }}', "plot-{{species_bundle.species}}");
+                                </script>
+
+                            </td>
+                        </tr>
+                        {% endif %}
                         {% for final_report, group_reports in species_bundle.report_groups.items %}
                             <tbody class="group-wrapper" display="none;" group-name="{{final_report.name}}" data-species="{{ species_bundle.species.taxid }}">
                             <tr>
@@ -516,7 +544,8 @@
                                         <div style="font-weight: bold; color: #1976d2; margin-right: 12px;">
                                             <i class="fa fa-info-circle"></i> Group Info
                                         </div>
-                                            {% if final_report.has_multiple %}
+
+                                        {% if final_report.has_multiple %}
                                         <div class="primary-row" style= "margin-top: 2px;">
                                             <button class="showSecondaryRows" type="button" group-name="{{final_report.name}}" title="Toggle Secondary Rows">
                                                 <i class="fa fa-toggle-off toggle-icon"></i>
@@ -527,6 +556,11 @@
                                             <button class="showSecondaryRows" type="button" style="visibility: hidden;">
                                                 <i class="fa fa-toggle-off toggle-icon"></i>
                                             </button>                                        
+                                        </div>
+                                        {% endif %}
+                                        {% if final_report|group_in_control %}
+                                        <div class="in-control-circle" style="margin-top:2px; background:#a73528; color:#fff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:700;" role="img" aria-label="Control Flag Present" title="Control Flag Present">
+                                            C
                                         </div>
                                         {% endif %}
                                         <!-- First section -->
@@ -576,17 +610,17 @@
                             {% endif %}
                             {% for value in group_reports %}
                             <tr class="parent {{value.row_class_name}}"  style="display: {{value.display}}" id="row_{{value.accid}}" group-name="{{final_report.name}}" first="{{value.first_in_group}}" accid>
-                                <td data-title="Description" style="text-align: left;">
-                                    {% if value.first_in_group %}
-                                    {% if final_report.has_multiple %}
-                                            <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
-                                    {% else %}
-                                            <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
-                                    
-                                    {% endif %}
-                                    
-                                    {% endif %}
-                                    <a href="#" id="plot_show" >{{value.description}}</a>
+                                <td data-title="Description" style="text-align: left; padding: 8px 12px;">
+                                    <div style="padding-left: 28px; padding-top:4px; padding-bottom:4px;">
+                                        {% if value.first_in_group %}
+                                            {% if final_report.has_multiple %}
+                                                <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                            {% else %}
+                                                <i class="fa fa-empty sort-icon"  title="Best Coverage"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                        <a href="#" id="plot_show" style="display: inline-block; padding: 4px 6px;">{{value.description}}</a>
+                                    </div>
                                 </td>                         
                                 <td data-title="Taxid">{{value.taxid}}</td>
                                 <td data-title="accID">
@@ -621,10 +655,10 @@
                                     {{value.classification_success}}</td>
                                 <td data-title="mapping success" style="{% success_count_color value.mapping_success %}" class = "extra-column">
                                     {{value.mapping_success}}</td>
-                                <td data-title="Warning" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
+                                <td data-title="Warning" class = "extra-column" style="{% flag_false_positive_color value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}">
                                     {% flag_false_positive value.depth value.depthR value.coverage value.mapped_reads value.windows_covered project_index %}</td>
                                 {% if in_control %}
-                                <td data-title="Control" style="{% flag_control_color value.control_flag %}">
+                                <td data-title="Control" style="{% flag_control_color value.control_flag %}" class = "extra-column">
                                     {{ value.control_flag_str }}</td>
                                 {% endif %}
                             </tr>
@@ -692,7 +726,7 @@
                             
                                                 <div style="position:relative height=100%" >
                                                     <button class="igv_browse btn btn-primary" id="igv_browse" type="button" project_pk="{{project_index}}" sample_pk="{{sample_index}}" sample_name="{{ sample }}"
-                                                    run_pk="{{value.run_index}}" accid="{{value.accid}}" show-igv-url="{% url 'igv_browser' %}" reference_id="{{value.unique_id}}" >IGV</button>
+                                                    run_pk="{{value.run.pk}}" accid="{{value.accid}}" show-igv-url="{% url 'igv_browser' %}" reference_id="{{value.unique_id}}" >IGV</button>
                                                 </div>
                                                 {% if value.data_exists %}
                                                 <div id="cov_div" >
@@ -891,10 +925,6 @@
                 const expanded = btn.getAttribute("aria-expanded") === "true";
                 const newExpanded = !expanded;
 
-                console.log(
-                    `Toggling species ${speciesId} -> expanded=${newExpanded}`
-                );
-
                 let tbody = document.querySelector(
                     `.group-wrapper[data-species="${speciesId}"]`
                 );
@@ -904,10 +934,6 @@
                         `.group-wrapper[data-species="${speciesId}"]`
                     )
                     .forEach(function (tbody) {
-
-                        console.log(
-                            `  Toggling group: ${tbody.getAttribute("group-name")}`
-                        );
 
                         tbody.style.display = newExpanded
                             ? "table-row-group"

@@ -524,7 +524,7 @@ class RunMetadataHandler:
         self.logger.info("Finished retrieving metadata")
 
     def get_protacc_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
-        print("prot_accesions")
+
         query_list = df.prot_acc.unique().tolist()
         self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
             "fetch_protein_accession_taxon"
@@ -784,11 +784,12 @@ class RunMetadataHandler:
         Return taxid for a given accid.
         """
 
-        try:
-            source = ReferenceSource.objects.get(accid=accid)
-            return source.taxid.taxid
-        except ReferenceSource.DoesNotExist:
+
+        sources = ReferenceSource.objects.filter(accid=accid).first()
+        if sources is None:
             return None
+        else:
+            return sources.taxid.taxid
 
     def get_taxid_representative_accid(self, taxid: int) -> Optional[str]:
         """
@@ -855,9 +856,10 @@ class RunMetadataHandler:
         from constants.software_names import SoftwareNames
 
         model_type = TelevirParameters.get_recall_model(project_pk=project_pk)
+        remap_params = TelevirParameters.get_remap_software(project_pk=project_pk)
 
         if model_type == SoftwareNames.SOFTWARE_REMAP_PARAMS_recall_default_model:
-            remap_params = TelevirParameters.get_remap_software(project_pk=project_pk)
+            
             return remap_params.max_taxids
 
         ml_api_client = MLAPIClient()
@@ -870,6 +872,7 @@ class RunMetadataHandler:
             import traceback
             traceback.print_exc()
             print(f"Error predicting cutoff: {e}. Using default cutoff of 15.")
+            cutoff_dict = {"predicted_cutoff": remap_params.max_taxids}
         
         self.logger.info(f"Predicted cutoff: {cutoff_dict}")
 

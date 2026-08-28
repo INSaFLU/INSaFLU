@@ -2010,11 +2010,16 @@ class FinalReport(models.Model):
     CONTROL_FLAG_SOURCE = 1
     CONTROL_FLAG_PRESENT = 2
     CONTROL_FLAG_WARNING = 3
+    CONTROL_FLAG_MAPPED_NO_REPORT = 4
+    CONTROL_FLAG_UNMAPPED = 5
 
     control_flag_options = {
         CONTROL_FLAG_NONE: "",
         CONTROL_FLAG_PRESENT: "Taxid found in control",
         CONTROL_FLAG_SOURCE: "",
+        CONTROL_FLAG_WARNING: "Warning: Control mapping failed",
+        CONTROL_FLAG_MAPPED_NO_REPORT: "Mapped in control but no report",
+        CONTROL_FLAG_UNMAPPED: "Unmapped in control",
     }
 
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
@@ -2207,9 +2212,9 @@ class ReportGroup(models.Model):
 
     @property
     def private_counts_safe(self):
-        if self.max_private_reads is None:
+        if self.private_counts is None:
             return 0
-        return self.max_private_reads
+        return self.private_counts
 
     @property
     def js_heatmap_ready(self):
@@ -2258,6 +2263,15 @@ class RawReferenceCompoundModel(models.Model):
     contig_counts = models.IntegerField(default=0)
     run_count = models.IntegerField(default=0)
     screening_count = models.IntegerField(default=0)
+
+    @property
+    def run(self):
+        if self.mapped_final_report is not None:
+            return self.mapped_final_report.run
+        elif self.mapped_raw_reference is not None:
+            return self.mapped_raw_reference.run
+        else:
+            return None
 
     @property
     def mapped_html(self):

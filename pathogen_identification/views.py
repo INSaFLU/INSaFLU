@@ -3009,6 +3009,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
 
         if latest_report_aggregate is None:
             latest_report_aggregate = ReportAggregateEmpty()    
+            report_groups = ReportGroup.objects.none()
         else:
             report_groups = ReportGroup.objects.filter(
                 aggregator=latest_report_aggregate

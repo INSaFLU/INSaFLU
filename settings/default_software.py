@@ -505,7 +505,28 @@ class DefaultSoftware(object):
             ),
             user,
         )
+        
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_PRINSEQ_name,
+            self.default_parameters.get_prinseq_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_validation_qc,
+            ),
+            user,
+        )
 
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_PRINSEQ_name,
+            self.default_parameters.get_prinseq_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_validation_qc,
+            ),
+            user,
+        )
 
         self.test_default_db(
             SoftwareNames.SOFTWARE_BWA_FILTER_name,
@@ -526,6 +547,29 @@ class DefaultSoftware(object):
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_minion,
                 pipeline_step=ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_validation_qc,
+            ),
+            user,
+        )
+
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_FILTER_name,
+            self.default_parameters.get_bwa_filter_defaults(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_validation_qc,
             ),
             user,
         )
@@ -599,6 +643,16 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+            ),
+            user,
+        )
+
+        self.test_default_db(
+            SoftwareNames.SOFTWARE_BWA_name,
+            self.default_parameters.get_bwa_default(
+                user,
+                Software.TYPE_OF_USE_televir_global,
+                ConstantsSettings.TECHNOLOGY_minion,
             ),
             user,
         )
@@ -841,7 +895,7 @@ class DefaultSoftware(object):
                 user,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_request_mapping,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_validation_depletion,
             ),
             user,
         )
@@ -851,8 +905,8 @@ class DefaultSoftware(object):
             self.default_parameters.get_bwa_default(
                 user,
                 Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-                pipeline_step=ConstantsSettings.PIPELINE_NAME_remapping,
+                ConstantsSettings.TECHNOLOGY_minion,
+                pipeline_step=ConstantsSettings.PIPELINE_NAME_validation_depletion,
             ),
             user,
         )
@@ -1290,7 +1344,7 @@ class DefaultSoftware(object):
         )
         return "" if result is None else result
 
-    def get_prinseq_parameters(self, user, technology_name):
+    def get_prinseq_parameters(self, user, technology_name, pipeline_step=None):
         result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_PRINSEQ_name,
             user,
@@ -1299,10 +1353,12 @@ class DefaultSoftware(object):
             None,
             None,
             technology_name,
+            pipeline_step=pipeline_step
         )
         return "" if result is None else result
 
     def get_bwa_filter_parameters(self, user, technology_name, pipeline_step):
+
         result = self.default_parameters.get_parameters_parsed(
             SoftwareNames.SOFTWARE_BWA_FILTER_name,
             user,
@@ -1857,16 +1913,8 @@ class DefaultSoftware(object):
             return self.get_remap_parameters(user, technology_name)
 
         if software_name == SoftwareNames.SOFTWARE_PRINSEQ_name:
-            self.test_default_db(
-                SoftwareNames.SOFTWARE_PRINSEQ_name,
-                self.default_parameters.get_prinseq_defaults(
-                    user,
-                    Software.TYPE_OF_USE_televir_global,
-                    ConstantsSettings.TECHNOLOGY_illumina,
-                ),
-                user,
-            )
-            return self.get_prinseq_parameters(user, technology_name)
+
+            return self.get_prinseq_parameters(user, technology_name, pipeline_step)
 
         if software_name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
             return self.get_bwa_filter_parameters(user, technology_name, pipeline_step)

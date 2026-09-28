@@ -685,6 +685,9 @@ class SoftwareNames(object):
     SOFTWARE_PRINSEQ_name_extended = (
         "Preprocessing - Prinseq++ (remove low complexity reads)"
     )
+    SOFTWARE_PRINSEQ_VALIDATION_name_extended = (
+        "Preprocessing - Prinseq++ (remove low complexity reads) - Validation"
+    )
     SOFTWARE_PRINSEQ_VERSION = "1.2.4"
     SOFTWARE_PRINSEQ_lc_entropy = "--lc_entropy"
     SOFTWARE_PRINSEQ_lc_dust = "--lc_dust"
@@ -800,6 +803,7 @@ class SoftwareNames(object):
     )
     SOFTWARE_BWA_FILTER_name = "BWA-Filter"
     SOFTWARE_BWA_FILTER_name_extended = "BWA - Filter"
+    SOFTWARE_BWA_VALIDATION_name_extended = "BWA - Validation Filter"
     SOFTWARE_BWA_FILTER_VERSION = "0.7.17"
     SOFTWARE_BWA_FILTER_parameters = "mem -t 4 -M -R '@RG\tID:foo\tSM:bar\tPL:illumina'"
     SOFTWARE_BWA_FILTER_PARAMETERS_TWO_SEQUENCES = (
@@ -1114,6 +1118,7 @@ class SoftwareNames(object):
 
     ### software with application in multiple pipeline_steps:
     polyvalent_software = [
+        SOFTWARE_PRINSEQ_name,
         SOFTWARE_BWA_FILTER_name,
         SOFTWARE_CENTRIFUGE_name,
         SOFTWARE_BWA_name,
@@ -1127,6 +1132,10 @@ class SoftwareNames(object):
     # pipeline_steps per software, for software with multiple pipeline_steps.
 
     polyvalent_software_pipelines = {
+        SOFTWARE_PRINSEQ_name: [
+            ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ConstantsSettings.PIPELINE_NAME_validation_qc,
+        ],
         SOFTWARE_KRAKEN2_name: [
             ConstantsSettings.PIPELINE_NAME_contig_classification,
             ConstantsSettings.PIPELINE_NAME_read_classification,
@@ -1152,6 +1161,7 @@ class SoftwareNames(object):
         ],
         SOFTWARE_BWA_name: [
             ConstantsSettings.PIPELINE_NAME_host_depletion,
+            ConstantsSettings.PIPELINE_NAME_validation_depletion,
             ConstantsSettings.PIPELINE_NAME_read_classification,
         ],
         SOFTWARE_MSAMTOOLS_name: [
@@ -1164,6 +1174,7 @@ class SoftwareNames(object):
         ],
         SOFTWARE_BWA_FILTER_name: [
             ConstantsSettings.PIPELINE_NAME_extra_qc,
+            ConstantsSettings.PIPELINE_NAME_validation_qc,
             ConstantsSettings.PIPELINE_NAME_host_depletion,
         ],
     }

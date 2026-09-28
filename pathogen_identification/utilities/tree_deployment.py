@@ -1060,6 +1060,8 @@ class Tree_Progress:
             ConstantsSettings.PIPELINE_NAME_host_depletion: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_assembly: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_remapping: self.run_nodes_remap,
+            ConstantsSettings.PIPELINE_NAME_validation_qc: self.run_nodes_sequential,
+            ConstantsSettings.PIPELINE_NAME_validation_depletion: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_remap_filtering: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_map_filtering: self.run_nodes_sequential,
             ConstantsSettings.PIPELINE_NAME_metagenomics_screening: self.run_nodes_sequential,
@@ -1377,7 +1379,10 @@ class TreeProgressGraph:
             ConstantsSettings.PIPELINE_NAME_contig_classification,
             ConstantsSettings.PIPELINE_NAME_read_classification,
             ConstantsSettings.PIPELINE_NAME_metagenomics_screening,
+            ConstantsSettings.PIPELINE_NAME_validation_qc,
+            ConstantsSettings.PIPELINE_NAME_validation_depletion,
             ConstantsSettings.PIPELINE_NAME_remapping,
+            ConstantsSettings.PIPELINE_NAME_remap_filtering,
             "leaves",
         ]
 

@@ -165,7 +165,7 @@ class RunDetail_main:
         )
 
         self.preprocess_method.register_modules(
-            [CS.PIPELINE_NAME_extra_qc],
+            [CS.PIPELINE_NAME_extra_qc, CS.PIPELINE_NAME_validation_qc],
         )
 
         self.check_preprocess_exists()

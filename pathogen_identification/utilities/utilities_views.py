@@ -310,6 +310,23 @@ class SampleReadsRetrieve:
                         qc_multiple.add_software(software_qc)
                     psample.software_qc = qc_multiple
 
+                if ConstantsSettings.PIPELINE_NAME_validation_qc in params_df.index:
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_validation_qc} + {psample.process_type}"
+                    psample.qc = True
+
+                    qc_block = params_df.loc[
+                        params_df.index == ConstantsSettings.PIPELINE_NAME_validation_qc
+                    ]
+
+                    psample.qc = True
+                    qc_multiple = MultipleQCSoftware([])
+                    for row in qc_block.iterrows():
+                        qc_software = row[1]["software_name"]
+                        qc_parameters = row[1]["value"]
+                        software_qc = QCSoftware(qc_software, qc_parameters)
+                        qc_multiple.add_software(software_qc)
+                    psample.software_qc = qc_multiple
+
                 if os.path.exists(run.depleted_reads_r2):
                     psample.processed_path_r2 = run.depleted_reads_r2
 
@@ -352,6 +369,23 @@ class SampleReadsRetrieve:
                         qc_multiple.add_software(software_qc)
                     psample.software_qc = qc_multiple
 
+                if ConstantsSettings.PIPELINE_NAME_validation_qc in params_df.index:
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_validation_qc} + {psample.process_type}"
+                    psample.qc = True
+
+                    qc_block = params_df.loc[
+                        params_df.index == ConstantsSettings.PIPELINE_NAME_validation_qc
+                    ]
+
+                    psample.qc = True
+                    qc_multiple = MultipleQCSoftware([])
+                    for row in qc_block.iterrows():
+                        qc_software = row[1]["software_name"]
+                        qc_parameters = row[1]["value"]
+                        software_qc = QCSoftware(qc_software, qc_parameters)
+                        qc_multiple.add_software(software_qc)
+                    psample.software_qc = qc_multiple
+
                 psample.processed_path_r1 = run.enriched_reads_r1
                 if os.path.exists(run.enriched_reads_r2):
                     psample.processed_path_r2 = run.enriched_reads_r2
@@ -371,6 +405,34 @@ class SampleReadsRetrieve:
 
                 psample.qc = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
+                qc_multiple = MultipleQCSoftware([])
+                for row in qc_block.iterrows():
+                    qc_software = row[1]["software_name"]
+                    qc_parameters = row[1]["value"]
+                    software_qc = QCSoftware(qc_software, qc_parameters)
+                    qc_multiple.add_software(software_qc)
+                psample.software_qc = qc_multiple
+
+                psample.processed_path_r1 = run.qc_reads_r1
+                if os.path.exists(run.qc_reads_r2):
+                    psample.processed_path_r2 = run.qc_reads_r2
+                processed_samples.append(psample)
+
+
+            elif ConstantsSettings.PIPELINE_NAME_validation_qc in params_df.index:
+                if os.path.exists(run.qc_reads_r1) is False:
+                    continue
+
+                psample = ProcessedSample(
+                    sample=run.run.parameter_set.sample,
+                )
+
+                qc_block = params_df.loc[
+                    params_df.index == ConstantsSettings.PIPELINE_NAME_validation_qc
+                ]
+
+                psample.qc = True
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_validation_qc
                 qc_multiple = MultipleQCSoftware([])
                 for row in qc_block.iterrows():
                     qc_software = row[1]["software_name"]

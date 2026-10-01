@@ -532,3 +532,12 @@ $ python3 manage.py run_remove_files --only_identify_files false
 Tip:
 
 You can create a cron job to run this task every week.
+
+
+## Funding 
+
+At an initial stage, this work was supported by funding from the European Union’s Horizon 2020 Research and Innovation programme under grant agreement No 773830: One Health European Joint Programme. INSaFLU-TELEVIR development and maintanance is currently supported by:
+
+The European Union through the [DURABLE “Research Network against Epidemics” project](https://durableproject.org/). DURABLE is co-funded by The European Commission Union under the EU4Health Programme (EU4H) [101102733]. However, views and opinions expressed are those of the authors only and do not necessarily reflect those of the European Union or the European Health and Digital Executive Agency. Neither the European Union nor the granting authority can be held responsible.
+The European Union through the [GENEO “Sustainable use and integration of enhanced infrastructure into routine genome-based surveillance and outbreak investigation activities in Portugal” project](https://www.insa.min-saude.pt/category/projectos/geneo/). GENEO is co-funded by The European Commission Union under the EU4Health Programme (EU4H) [101113460]. However, views and opinions expressed are those of the authors only and do not necessarily reflect those of the European Union or the European Health and Digital Executive Agency. Neither the European Union nor the granting authority can be held responsible.
+

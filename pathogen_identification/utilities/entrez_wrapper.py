@@ -337,6 +337,7 @@ class EntrezWrapper:
         self.bindir = bindir
         self.outfile = outfile
         self.outdir = outdir
+        self.user = user
 
         Entrez.email = user.email
         Entrez.max_tries = 1

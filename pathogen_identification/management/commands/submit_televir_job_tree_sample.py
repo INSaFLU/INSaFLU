@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 
 from managing_files.models import ProcessControler
 from pathogen_identification.models import (PIProject_Sample, Projects,
-                                            SoftwareTree)
+                                            SoftwareTree, RunBatch)
 from pathogen_identification.utilities.tree_deployment import (
     Tree_Progress, TreeProgressGraph)
 from pathogen_identification.utilities.utilities_pipeline import (
@@ -26,7 +26,7 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--project_id",
+            "--batch_id",
             type=int,
             help="project to be run (pk)",
         )
@@ -50,17 +50,18 @@ class Command(BaseCommand):
         process_controler = ProcessControler()
         process_SGE = ProcessSched()
         user = User.objects.get(pk=options["user_id"])
-        project = Projects.objects.get(pk=options["project_id"])
+        run_batch = RunBatch.objects.get(pk=options["batch_id"])
         output_directory = options["outdir"]
 
         if os.path.exists(output_directory) == False:
             os.makedirs(output_directory)
 
         samples = PIProject_Sample.objects.filter(
-            project=project, is_deleted=False, pk=options["sample_id"]
+            is_deleted=False, pk=options["sample_id"]
         )
 
         sample = samples.first()
+        project = sample.project
 
         # PROCESS CONTROLER
 
@@ -96,11 +97,8 @@ class Command(BaseCommand):
             if software_utils.project is None:
                 raise Exception("Project tree not found")
             
-            #local_tree = software_utils.generate_software_tree_safe(software_utils.project)
-            #available_path_nodes = software_utils.get_available_pathnodes(local_tree)
-            available_path_nodes = software_utils.query_available_pathnodes(
-                pipeline_type=SoftwareTree.PIPELINE_TYPE_CLASSIC
-            )
+            available_path_nodes = run_batch.nodes.all()
+            available_path_nodes = {leaf.pk: leaf for leaf in available_path_nodes}
 
             matched_paths = {
                 leaf_index: leaf for leaf_index, leaf in available_path_nodes.items() if utils.parameter_util.check_ParameterSet_available_to_run(

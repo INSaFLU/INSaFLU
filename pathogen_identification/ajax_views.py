@@ -685,11 +685,16 @@ def deploy_ProjectPI(request):
                         PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_REGULAR
                     )
 
+                    from pathogen_identification.models import RunBatch
+                    run_batch = RunBatch.objects.create(project=project, user=user)
+                    run_batch.nodes.set([leaf for _, leaves in runs_to_deploy.items() for leaf in leaves])
+                    run_batch.save()
+
                     for sample, _ in runs_to_deploy.items():
 
                         taskID = process_SGE.set_submit_televir_sample(
                             user=user,
-                            project_pk=project.pk,
+                            batch_pk=run_batch.pk,
                             sample_pk=sample.pk,
                             job_name=job_name,
                             vect_job_name_wait=[job_name_wait]
@@ -816,10 +821,15 @@ def submit_televir_project_sample(request):
                     PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_REGULAR
                 )
 
+                from pathogen_identification.models import RunBatch
+                run_batch = RunBatch.objects.create(project=project, user=user)
+                run_batch.nodes.set([leaf for _, leaves in runs_to_deploy.items() for leaf in leaves])
+                run_batch.save()
+            
                 for sample, _ in runs_to_deploy.items():
                     _ = process_SGE.set_submit_televir_sample(
                         user=request.user,
-                        project_pk=project.pk,
+                        batch_pk=run_batch.pk,
                         sample_pk=sample.pk,
                         job_name = job_name,
                         vect_job_name_wait=[job_name_wait]

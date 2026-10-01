@@ -330,25 +330,25 @@ class DefaultSoftware(object):
             user,
         )
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BAMUTIL_name,
-            self.default_parameters.get_bamutil_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_illumina,
-            ),
-            user,
-        )
+        #self.test_default_db(
+        #    SoftwareNames.SOFTWARE_BAMUTIL_name,
+        #    self.default_parameters.get_bamutil_defaults(
+        #        user,
+        #        Software.TYPE_OF_USE_televir_global,
+        #        ConstantsSettings.TECHNOLOGY_illumina,
+        #    ),
+        #    user,
+        #)
 
-        self.test_default_db(
-            SoftwareNames.SOFTWARE_BAMUTIL_name,
-            self.default_parameters.get_bamutil_defaults(
-                user,
-                Software.TYPE_OF_USE_televir_global,
-                ConstantsSettings.TECHNOLOGY_minion,
-            ),
-            user,
-        )
+        #self.test_default_db(
+        #    SoftwareNames.SOFTWARE_BAMUTIL_name,
+        #    self.default_parameters.get_bamutil_defaults(
+        #        user,
+        #        Software.TYPE_OF_USE_televir_global,
+        #        ConstantsSettings.TECHNOLOGY_minion,
+        #    ),
+        #    user,
+        #)
 
         ####
         #### for software with multiple pipeline steps, test all pipeline steps

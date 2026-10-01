@@ -1083,7 +1083,7 @@ class ProcessSched(object):
             raise Exception("Fail to submit the job.")
         return job_id
 
-    def set_submit_televir_sample(self, user, project_pk: int, sample_pk: int, job_name, vect_job_name_wait):
+    def set_submit_televir_sample(self, user, batch_pk: int, sample_pk: int, job_name, vect_job_name_wait):
         """
         submit the job to televir
         """
@@ -1092,10 +1092,10 @@ class ProcessSched(object):
         outdir_job = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_tree_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
+            "python3 {} submit_televir_job_tree_sample --user_id {} --batch_id {} --sample_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
-                project_pk,
+                batch_pk,
                 sample_pk,
                 outdir_job,
             )

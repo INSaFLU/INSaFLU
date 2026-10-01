@@ -2268,7 +2268,7 @@ class Utils_Manager:
 
     def sample_nodes_check_no_repeats(
         self, submission_dict: dict, available_path_nodes: dict, project: Projects
-    ):
+    ) -> Dict[PIProject_Sample, List[SoftwareTreeNode]]:
         utils = Utils_Manager()
         ### SUBMISSION
         runs_to_deploy = 0
@@ -2997,7 +2997,7 @@ class SoftwareTreeUtils:
 
         return clean_samples_leaf_dict, workflow_deployed_dict
 
-    def check_and_set_runs_to_deploy_sample(self, sample: PIProject_Sample) -> dict:
+    def check_and_set_runs_to_deploy_sample(self, sample: PIProject_Sample) -> Dict[PIProject_Sample, List[SoftwareTreeNode]]:
         """
         Check if there are runs to run. sets to queue if there are.
         """

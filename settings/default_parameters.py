@@ -1273,18 +1273,12 @@ class DefaultParameters(object):
                 software.technology.name,
             )
 
-        elif software.name == SoftwareNames.SOFTWARE_BAMUTIL_name:
-            return self.get_bamutil_defaults(
-                software.owner,
-                Software.TYPE_OF_USE_televir_global,
-                software.technology.name,
-            )
-
         elif software.name == SoftwareNames.SOFTWARE_DUSTMASKER_name:
             return self.get_dustmasker_defaults(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
+                pipeline_step=software.pipeline_step.name
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
@@ -2346,6 +2340,8 @@ class DefaultParameters(object):
             max number of taxids to map against.
             max number of acccids to map for each taxid.
             minimum coverage?
+        
+        DEPRECATED: this software is not used anymore in the pipeline, but it is kept here for historical reasons.
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_BAMUTIL_name

@@ -261,6 +261,15 @@ class SoftwareTreeNode(models.Model):
         return SoftwareTreeNode.objects.filter(id__in=descendants)
 
 
+class RunBatch(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    
+    nodes = models.ManyToManyField(SoftwareTreeNode, blank=True)
+
+    class Meta:
+        ordering = ["-date_created"]
+
 class LeafParameter(models.Model):
     leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
     module = models.CharField(max_length=200, blank=True, null=True)

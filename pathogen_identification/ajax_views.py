@@ -1075,7 +1075,6 @@ def kill_televir_project_sample(request):
             ],
         )
 
-        print(runs_params)
         for single_run_param in runs_params:
             try:  # kill process
 

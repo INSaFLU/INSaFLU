@@ -264,7 +264,6 @@ class SoftwareTreeNode(models.Model):
 class RunBatch(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     project = models.ForeignKey(Projects, on_delete=models.CASCADE)
-    
     nodes = models.ManyToManyField(SoftwareTreeNode, blank=True)
 
     class Meta:
@@ -364,6 +363,10 @@ class PIProject_Sample(models.Model):
         return [int(panel) for panel in panels]
 
     @property
+    def batch_registrations(self):
+        return SampleBatchRegister.objects.filter(sample=self).order_by("-date_registered")
+    
+    @property
     def panels_added(self):
         panels = self.panels_pks
         return ReferencePanel.objects.filter(
@@ -411,6 +414,17 @@ class PIProject_Sample(models.Model):
         if os.path.exists(self.media_dir):
             return self.media_dir
         return None
+
+
+
+class SampleBatchRegister(models.Model):
+    sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
+    batch = models.ForeignKey(RunBatch, on_delete=models.CASCADE)
+    date_registered = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date_registered"]
+
 
 class ParameterSet(models.Model):
     STATUS_NOT_STARTED = 0

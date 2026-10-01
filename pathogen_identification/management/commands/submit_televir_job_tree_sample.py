@@ -68,7 +68,7 @@ class Command(BaseCommand):
         process_SGE.set_process_controler(
             user,
             process_controler.get_name_televir_project_sample(
-                project_pk=project.pk, sample_pk=sample.pk
+                batch_pk=run_batch.pk, sample_pk=sample.pk
             ),
             ProcessControler.FLAG_RUNNING,
         )
@@ -76,7 +76,7 @@ class Command(BaseCommand):
         process = ProcessControler.objects.filter(
             owner__id=user.pk,
             name=process_controler.get_name_televir_project_sample(
-                project_pk=project.pk, sample_pk=sample.pk
+                batch_pk=run_batch.pk, sample_pk=sample.pk
             ),
         )
 
@@ -150,7 +150,7 @@ class Command(BaseCommand):
                 process_SGE.set_process_controler(
                     user,
                     process_controler.get_name_televir_project_sample(
-                        project_pk=project.pk, sample_pk=sample.pk
+                        batch_pk=run_batch.pk, sample_pk=sample.pk
                     ),
                     ProcessControler.FLAG_FINISHED,
                 )
@@ -160,7 +160,7 @@ class Command(BaseCommand):
             process_SGE.set_process_controler(
                 user,
                 process_controler.get_name_televir_project_sample(
-                    project_pk=project.pk, sample_pk=sample.pk
+                        batch_pk=run_batch.pk, sample_pk=sample.pk
                 ),
                 ProcessControler.FLAG_ERROR,
             )

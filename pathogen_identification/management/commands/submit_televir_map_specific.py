@@ -67,6 +67,7 @@ class RunEngine:
         self.sample_name = config["sample_name"]
         self.type = config["type"]
         self.project_name = project.name
+        
         self.username = project.owner.username
         self.prefix = "none"
         self.config = config

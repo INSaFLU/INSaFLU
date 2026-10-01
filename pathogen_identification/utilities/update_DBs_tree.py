@@ -34,7 +34,7 @@ from pathogen_identification.modules.run_main import RunEngine_class
 
 def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet) -> tuple:
     """get run parents for run_class. Update run_class.run_data."""
-    user = User.objects.get(username=run_class.username)
+    user = run_class.owner
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
     )
@@ -387,7 +387,7 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
     :param run_class:
     :return: None
     """
-    user = User.objects.get(username=run_class.username)
+    user = run_class.owner
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
     )
@@ -478,8 +478,8 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
         run_read_register.save()
 
 
-def Sample_update_combinations(run_class: Type[RunEngine_class]):
-    user = User.objects.get(username=run_class.username)
+def Sample_update_combinations(run_class: RunEngine_class):
+    user = run_class.owner
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
     )

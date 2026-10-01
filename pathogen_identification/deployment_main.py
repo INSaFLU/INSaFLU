@@ -65,10 +65,6 @@ class PathogenIdentificationDeploymentCore:
             self.file_r2 = ""
 
     @property
-    def username(self):
-        return self.sample.project.owner.username
-
-    @property
     def user(self):
         return self.sample.project.owner
 

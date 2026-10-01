@@ -368,7 +368,6 @@ class RunDetail_main:
         project = Projects.objects.get(pk=project_pk)
         self.project_name = project.name
         self.owner = project.owner
-        self.username = project.owner.username
 
         self.prefix = config["prefix"]
         self.suprun = self.prefix

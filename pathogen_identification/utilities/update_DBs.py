@@ -380,15 +380,11 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
     :param run_class:
     :return: None
     """
-    user = User.objects.get(username=run_class.username)
+    user = run_class.owner
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
     )
 
-    # sample = PIProject_Sample.objects.get(
-    #    name=run_class.sample.sample_name,
-    #    project=project,
-    # )
     sample = run_class.sample_registered
 
     reads_after_processing = run_class.sample.reads_after_processing
@@ -461,16 +457,9 @@ def Update_RunMain(run_class: RunEngine_class, parameter_set: ParameterSet):
     RegisterRunReads(runmain, run_class)
 
 
-def Sample_update_combinations(run_class: Type[RunEngine_class]):
-    user = User.objects.get(username=run_class.username)
-    project = Projects.objects.get(
-        name=run_class.project_name, owner=user, is_deleted=False
-    )
+def Sample_update_combinations(run_class: RunEngine_class):
+    user = run_class.owner
 
-    # sample = PIProject_Sample.objects.get(
-    #    project=project,
-    #    name=run_class.sample.sample_name,
-    # )
     sample = run_class.sample_registered
 
     sample.combinations = sample.combinations + 1
@@ -480,7 +469,7 @@ def Sample_update_combinations(run_class: Type[RunEngine_class]):
 
 def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet) -> tuple:
     """get run parents for run_class. Update run_class.run_data."""
-    user = User.objects.get(username=run_class.username)
+    user = run_class.owner
     project = Projects.objects.get(
         name=run_class.project_name, owner=user, is_deleted=False
     )

@@ -1119,7 +1119,7 @@ class ProcessSched(object):
                 self.set_process_controlers(
                     user,
                     process_controler.get_name_televir_project_sample(
-                        project_pk, sample_pk
+                        batch_pk, sample_pk
                     ),
                     job_id,
                 )

@@ -686,7 +686,7 @@ def deploy_ProjectPI(request):
                     )
 
                     from pathogen_identification.models import RunBatch
-                    run_batch = RunBatch.objects.create(project=project, user=user)
+                    run_batch = RunBatch.objects.create(project=project)
                     run_batch.nodes.set([leaf for _, leaves in runs_to_deploy.items() for leaf in leaves])
                     run_batch.save()
 
@@ -822,7 +822,7 @@ def submit_televir_project_sample(request):
                 )
 
                 from pathogen_identification.models import RunBatch
-                run_batch = RunBatch.objects.create(project=project, user=user)
+                run_batch = RunBatch.objects.create(project=project)
                 run_batch.nodes.set([leaf for _, leaves in runs_to_deploy.items() for leaf in leaves])
                 run_batch.save()
             

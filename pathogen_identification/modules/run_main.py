@@ -654,31 +654,6 @@ class RunDetail_main:
         self.sift = config["actions"]["SIFT"]
         self.house_cleaning = config["actions"]["CLEAN"]
 
-        ### output files
-        self.params_file_path = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_params.csv",
-        )
-        self.remap_plan_path = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_remap_plan.csv",
-        )
-        self.full_report = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_full_report.tsv",
-        )
-        self.assembly_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_aclass_summary.tsv",
-        )
-        self.read_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_rclass_summary.tsv",
-        )
-        self.merged_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_mclass_summary.tsv",
-        )
 
     def update_merged_targets(self, targets_list: List[Remap_Target]):
         """

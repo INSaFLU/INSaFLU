@@ -1190,11 +1190,14 @@ class RawReference(models.Model):
     STATUS_UNMAPPED = 1
     STATUS_MAPPING = 2
     STATUS_FAIL = 3
+    STATUS_MISSING = 4
 
     STATUS_CHOICES = (
         (STATUS_MAPPED, "Mapped"),
         (STATUS_UNMAPPED, "Unmapped"),
         (STATUS_MAPPING, "Mapping"),
+        (STATUS_FAIL, "Fail"),
+        (STATUS_MISSING, "Missing")
     )
 
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)

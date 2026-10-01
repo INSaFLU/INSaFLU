@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -385,13 +385,11 @@ class RunMetadataHandler:
         from pathogen_identification.utilities.reference_utils import \
             AssemblyStore
 
-
         assembly_store = AssemblyStore(ConstantsSettings.local_assembly_store, user = self.entrez_conn.user)
         assemblies = assembly_store.match_taxid_to_assembly(df[df["has_refs"] == False])
         assembly_store.register_assemblies(assemblies, cache = True)
         df = self.check_taxids_not_in_db(df)
-        df = df[df["has_refs"] == True]
-        df.drop(columns=["has_refs"], inplace=True)
+
 
         return df
 
@@ -445,6 +443,10 @@ class RunMetadataHandler:
 
         df = self.retrieve_taxids_ncbi(df)
 
+        df_absent = df[df["has_refs"] == False]
+        df = df[df["has_refs"] == True]
+        df.drop(columns=["has_refs"], inplace=True)
+        df_absent.drop(columns=["has_refs"], inplace=True)
 
         self.accid_register(df)
 

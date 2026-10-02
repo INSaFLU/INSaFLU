@@ -583,8 +583,8 @@ class RunMetadataHandler:
         df = df[(df.taxid != "0") & (df.taxid != 0) & (df.taxid != "")]
         if "acc" in df.columns:
             missing_accids["acc"] = df[df.taxid.isna()].acc.unique().tolist()
+            df = df.dropna(subset=["taxid"])
 
-        df["taxid"] = df["taxid"].fillna("NA")
         df["taxid"] = df["taxid"].astype(str)
         df["taxid"] = df["taxid"].apply(lambda x: x.split(".")[0])
 

@@ -1880,6 +1880,8 @@ def add_teleflu_sample(request):
             "not_added": False,
         }
 
+        ref_id = int(request.POST["teleflu_id"])
+
         teleflu_project = TeleFluProject.objects.get(pk=ref_id)
         sample_ids = get_project_checked_boxes(
             request, teleflu_project.televir_project.pk

@@ -296,6 +296,9 @@ class RunMetadataHandler:
 
     @staticmethod
     def prettify_reports(df: pd.DataFrame) -> pd.DataFrame:
+
+        df["description"] = df["description"].fillna("NA")
+
         if "acc_x" in df.columns:
             if "accid" in df.columns:
                 df = df.drop(columns=["acc_x"])
@@ -425,7 +428,7 @@ class RunMetadataHandler:
 
     def results_collect_metadata(
         self, df: pd.DataFrame, sift: bool = True
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[pd.DataFrame, dict]:
         """
         Process results.
         merge df with metadata to create taxid columns.
@@ -435,9 +438,7 @@ class RunMetadataHandler:
 
         df = self.clean_report(df)
 
-        df = self.merge_report_to_metadata_taxid(df)
-        print("####################### MERGE REPORT TO METADATA TAXID MERGED ALREADY #######################")
-        print(df.head())
+        df, missing_accids = self.merge_report_to_metadata_taxid(df)
 
         df = self.map_hit_report(df)
 
@@ -448,44 +449,21 @@ class RunMetadataHandler:
         df_absent = df[df["has_refs"] == False]
         df = df[df["has_refs"] == True]
         df.drop(columns=["has_refs"], inplace=True)
-        df_absent.drop(columns=["has_refs"], inplace=True)
-
-        print("####################### REGISTER ACCIDS #######################")
-        print(df.head())
-        print(df_absent.head())
+        missing_accids['taxid'] = df_absent.taxid.unique().tolist()
 
         self.accid_register(df)
         df = self.db_get_taxid_descriptions(df)
         df = df.reset_index(drop=True)
 
-        def get_acc(df: pd.DataFrame):
-            if "acc_x" in df.columns:
-                df["accid"] = df["acc_x"]
-                df.drop(columns=["acc_x"])
-            elif "acc_y" in df.columns:
-                df["accid"] = df["acc_y"]
-                df.drop(columns=["acc_y"])
-            elif "acc" in df.columns:
-                df["accid"] = df["acc"]
-                df.drop(columns=["acc"])
-            else:
-                df["accid"] = df["taxid"].apply(self.get_taxid_representative_accid)
-
-            return df
-
-        if df.shape[0] > 0:
-            df = get_acc(df)
-            df["description"] = df["description"].fillna("NA")
-
-        if sift:
-            sifted_df = self.sift_report_filter(df, query=self.sift_query)
-            self.sift_report = self.sift_summary(df, sifted_df)
-            df = sifted_df
-
         df = self.prettify_reports(df)
-        df_absent = self.prettify_reports(df_absent)
+        if "accid" not in df.columns:
+            df["accid"] = df["taxid"].apply(self.get_taxid_representative_accid)
 
-        return df, df_absent
+        #if sift:
+        #    sifted_df = self.sift_report_filter(df, query=self.sift_query)
+        #    self.sift_report = self.sift_summary(df, sifted_df)
+        #    df = sifted_df
+        return df, missing_accids
 
     def get_metadata(self):
         """
@@ -535,7 +513,7 @@ class RunMetadataHandler:
 
         self.logger.info("Finished retrieving metadata")
 
-    def get_protacc_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
+    def get_protacc_taxid(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
         """
         add a local database query to get taxid from prot_acc, if not found, use entrez to get taxid."""
 
@@ -549,37 +527,43 @@ class RunMetadataHandler:
             "fetch_taxid_description"
         )
         # merge with df
-        print("####################### MERGE PROTACC TAXID #######################")
-        print(output.head())
-        print(df.head())
+        unmatched = df[~df.prot_acc.isin(output.acc.unique())]
+
         df = df.merge(output, left_on="prot_acc", right_on="acc", how="left")
         df = df.drop(columns=["prot_acc"])
-        return df
+        return df, unmatched.prot_acc.unique().tolist()
 
-    def merge_report_to_metadata_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
+    def merge_report_to_metadata_taxid(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, dict]:
         """
-
         Args:
             df: classifier output, possessing at least columns: acc, protid, prot_acc or taxid.
 
         Returns:
             df: classifier output, possessing original columns plus: description.
-
         """
+        missing_accids = {
+            "acc": [],
+            "protid": [],
+            "prot_acc": [],
+            }
 
         if df.shape[0] == 0:
-            return pd.DataFrame(columns=["taxid", "description", "file"])
+            return pd.DataFrame(columns=["taxid", "description", "file"]), missing_accids
+        
 
         if "taxid" not in df.columns:
             if "prot_acc" in df.columns and "acc" not in df.columns:
                 counts_df = df.groupby(["prot_acc"]).size().reset_index(name="counts")
-                return self.get_protacc_taxid(counts_df)
+                counts_df, missing_protacc= self.get_protacc_taxid(counts_df)
+                missing_accids["prot_acc"] = missing_protacc
+                return counts_df, missing_accids
 
             elif "protid" in df.columns and "acc" not in df.columns:
                 counts_df = df.groupby(["protid"]).size().reset_index(name="counts")
                 df = self.merge_check_column_types(
                     counts_df, self.protein_to_accession, "protid"
                 )
+                missing_accids["protid"]  = df[df.acc.isna()].protid.unique().tolist()
 
             if "acc" in df.columns and "taxid" not in df.columns:
                 if "counts" in df.columns:
@@ -597,12 +581,13 @@ class RunMetadataHandler:
                     )
 
         df = df[(df.taxid != "0") & (df.taxid != 0) & (df.taxid != "")]
+        missing_accids["acc"] = df[df.taxid.isna()].acc.unique().tolist()
 
+        df["taxid"] = df["taxid"].fillna("NA")
         df["taxid"] = df["taxid"].astype(str)
-        # remove decimals from taxid
         df["taxid"] = df["taxid"].apply(lambda x: x.split(".")[0])
 
-        return df
+        return df, missing_accids
 
     def db_get_taxid_descriptions(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -641,12 +626,9 @@ class RunMetadataHandler:
                     .taxid.taxid
                 )
             except:
-                return ""
+                return None
 
         df["taxid"] = df["acc"].apply(get_taxid)
-
-        df["taxid"] = df["taxid"].fillna("NA")
-        df["taxid"] = df["taxid"].astype(str)
 
         return df
 
@@ -796,7 +778,18 @@ class RunMetadataHandler:
 
         self.rclass= rclass
         self.aclass= aclass
-    
+        
+        missing_refs = []
+        for reference_type, missing in rmissing_ref.items():
+            for ref in missing: 
+                missing_refs.append((reference_type, ref, "reads"))
+        for reference_type, missing in amissing_ref.items():
+            for ref in missing: 
+                missing_refs.append((reference_type, ref, "assembly"))  
+
+        missing_refs_df = pd.DataFrame(missing_refs, columns=["reference_type", "missing_reference", "source"])
+        self.missing_refs_df = missing_refs_df
+        
     @staticmethod
     def get_accid_taxid(accid: str) -> Optional[int]:
         """

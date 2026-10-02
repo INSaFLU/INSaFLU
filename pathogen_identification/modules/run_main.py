@@ -591,6 +591,10 @@ class RunDetail_main:
         return os.path.join(self.media_dir_classification, f"{self.prefix}_mclass_summary.tsv")
     
     @property
+    def raw_classification_missing_accids(self) -> str:
+        return os.path.join(self.media_dir_classification, f"{self.prefix}_raw_missing_accids.tsv")
+    
+    @property
     def username(self):
         return self.owner.username
 
@@ -975,6 +979,7 @@ class Run_Deployment_Methods(RunDetail_main):
             self.assembly_classification_summary: self.aclass_summary,
             self.read_classification_summary: self.rclass_summary,
             self.merged_classification_summary: self.merged_targets,
+            self.raw_classification_missing_accids: self.metadata_tool.missing_refs_df,
         }
         for output_df_path, df in export_dict.items():
             if df is not None:

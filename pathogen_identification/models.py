@@ -1909,6 +1909,7 @@ class RunRemapMain(models.Model):
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )
     merged_log = models.CharField(max_length=350, blank=True, null=True)
+    missing_log = models.CharField(max_length=350, blank=True, null=True)
     performed = models.BooleanField(default=False)
 
     method = models.CharField(

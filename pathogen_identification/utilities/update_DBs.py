@@ -942,6 +942,7 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
     try:
         remap_main = RunRemapMain.objects.get(run=runmain, sample=sample)
         remap_main.merged_log = run_class.merged_classification_summary
+        remap_main.missing_log = run_class.raw_classification_missing_accids
         remap_main.remap_plan = run_class.remap_plan_path
         remap_main.performed = run_class.remap_main.performed
         remap_main.method = run_class.remap_main.method
@@ -956,6 +957,7 @@ def Update_Run_Classification(run_class: RunEngine_class, parameter_set: Paramet
             run=runmain,
             sample=sample,
             merged_log=run_class.merged_classification_summary,
+            missing_log = run_class.raw_classification_missing_accids,
             remap_plan=run_class.remap_plan_path,
             performed=run_class.remap_main.performed,
             method=run_class.remap_main.method,

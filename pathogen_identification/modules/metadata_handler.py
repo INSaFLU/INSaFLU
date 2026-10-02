@@ -277,9 +277,9 @@ class RunMetadataHandler:
         )
 
         if self.rclass.empty is False:
+            self.rclass = self.rclass.sort_values(by="counts", ascending=False)
             taxid_cutoff = self._predict_cutoff(self.rclass, project_pk)
             taxid_limit = min(taxid_cutoff, taxid_limit)
-            self.rclass = self.rclass.sort_values(by="counts", ascending=False)
 
         if self.merged_targets.empty:
             self.merge_reports_clean(
@@ -425,7 +425,7 @@ class RunMetadataHandler:
 
     def results_collect_metadata(
         self, df: pd.DataFrame, sift: bool = True
-    ) -> pd.DataFrame:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Process results.
         merge df with metadata to create taxid columns.
@@ -436,6 +436,8 @@ class RunMetadataHandler:
         df = self.clean_report(df)
 
         df = self.merge_report_to_metadata_taxid(df)
+        print("####################### MERGE REPORT TO METADATA TAXID MERGED ALREADY #######################")
+        print(df.head())
 
         df = self.map_hit_report(df)
 
@@ -448,10 +450,12 @@ class RunMetadataHandler:
         df.drop(columns=["has_refs"], inplace=True)
         df_absent.drop(columns=["has_refs"], inplace=True)
 
+        print("####################### REGISTER ACCIDS #######################")
+        print(df.head())
+        print(df_absent.head())
+
         self.accid_register(df)
-
         df = self.db_get_taxid_descriptions(df)
-
         df = df.reset_index(drop=True)
 
         def get_acc(df: pd.DataFrame):
@@ -479,8 +483,9 @@ class RunMetadataHandler:
             df = sifted_df
 
         df = self.prettify_reports(df)
+        df_absent = self.prettify_reports(df_absent)
 
-        return df
+        return df, df_absent
 
     def get_metadata(self):
         """
@@ -531,6 +536,8 @@ class RunMetadataHandler:
         self.logger.info("Finished retrieving metadata")
 
     def get_protacc_taxid(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        add a local database query to get taxid from prot_acc, if not found, use entrez to get taxid."""
 
         query_list = df.prot_acc.unique().tolist()
         self.entrez_conn.bin_query = self.entrez_conn.bin_query_factory.get_query(
@@ -542,6 +549,9 @@ class RunMetadataHandler:
             "fetch_taxid_description"
         )
         # merge with df
+        print("####################### MERGE PROTACC TAXID #######################")
+        print(output.head())
+        print(df.head())
         df = df.merge(output, left_on="prot_acc", right_on="acc", how="left")
         df = df.drop(columns=["prot_acc"])
         return df
@@ -581,7 +591,6 @@ class RunMetadataHandler:
             if "taxid" not in df.columns:
                 if "acc" in df.columns:
                     df = self.db_get_taxid_from_accid(df)
-
                 else:
                     raise ValueError(
                         "No taxid, accid or protid in the dataframe, unable to retrieve description."
@@ -782,8 +791,11 @@ class RunMetadataHandler:
         report_1: pd.DataFrame,
         report_2: pd.DataFrame,
     ):
-        self.rclass = self.results_collect_metadata(report_1)
-        self.aclass = self.results_collect_metadata(report_2)
+        rclass, rmissing_ref = self.results_collect_metadata(report_1)
+        aclass, amissing_ref=  self.results_collect_metadata(report_2)
+
+        self.rclass= rclass
+        self.aclass= aclass
     
     @staticmethod
     def get_accid_taxid(accid: str) -> Optional[int]:

@@ -783,10 +783,12 @@ class RunMetadataHandler:
         missing_refs = []
         for reference_type, missing in rmissing_ref.items():
             for ref in missing: 
-                missing_refs.append((reference_type, ref, "reads"))
+                if ref and ref != "-":
+                    missing_refs.append((reference_type, ref, "reads"))
         for reference_type, missing in amissing_ref.items():
             for ref in missing: 
-                missing_refs.append((reference_type, ref, "assembly"))  
+                if ref and ref != "-":
+                    missing_refs.append((reference_type, ref, "assembly"))  
 
         missing_refs_df = pd.DataFrame(missing_refs, columns=["reference_type", "missing_reference", "source"])
         self.missing_refs_df = missing_refs_df

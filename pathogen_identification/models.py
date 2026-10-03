@@ -1932,6 +1932,19 @@ class RunRemapMain(models.Model):
     def __str__(self):
         return self.method
 
+    @property
+    def missing_log_exists(self):
+        if self.missing_log is None:
+            return False
+
+        if self.missing_log == "":
+            return False
+
+        if os.path.isfile(self.missing_log):
+            return True
+
+        return False
+
 
 class ReferenceMap_Main(models.Model):
     reference = models.CharField(

@@ -301,7 +301,7 @@ class Pipeline_Makeup(PipelineTreeBase):
 
     def get_pipeline_makeup_result_of_operation(
         self,
-        software,
+        software: Software,
         turn_off=True,
         televir_project: Optional[Projects] = None,
         project_sample: Optional[PIProject_Sample] = None,
@@ -317,6 +317,8 @@ class Pipeline_Makeup(PipelineTreeBase):
             pipeline_steps_project = self.get_software_pipeline_list_including(
                 software, televir_project=televir_project, project_sample=project_sample
             )
+        
+        pipeline_steps = CS.match_pipeline_type(software.pipeline_step.name)
 
-        return pipeline_steps_project
+        return pipeline_steps
 

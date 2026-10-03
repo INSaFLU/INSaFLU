@@ -393,8 +393,17 @@
                                 <input type=submit value="database matches" name="btn1">
                                 <input type="hidden" name="file_path" value="{{run_remap.remap_plan}}">
                             </form>
+                            {% if missing_references %}
+                            <form id="download_missing_refs" action="{% url 'download_file' %}" method="POST" style="width: 50%; float: right;">
+                                {% csrf_token %}
+                                <input type=submit value="missing references" name="btn1">
+                                <input type="hidden" name="file_path" value="{{run_remap.missing_log}}">
+                            </form>
+                            {% endif %}
+
                         </div>
                         {% endif %}
+
                     </div>
                 </div>
             </div>

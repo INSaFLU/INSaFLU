@@ -2898,6 +2898,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "in_control": True,  # has_controlled_flag,
             "report_list": sorted_reports,
             "data_exists": True if not run_main_pipeline.data_deleted else False,
+            "missing_references": run_remap.missing_log_exists,
             "excluded_exist": excluded_reports_exist,
             "empty_reports": empty_reports,
             "error_rate_available": latest_report_aggregate.error_rate_available,

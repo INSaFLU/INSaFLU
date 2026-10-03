@@ -164,6 +164,20 @@ class ConstantsSettings(object):
     ]
 
     @staticmethod
+    def match_pipeline_type(pipeline_name):
+        """
+        Translate pipeline step names - use to combine steps."""
+
+        if pipeline_name in ConstantsSettings.vect_pipeline_televir_classic:
+            return ConstantsSettings.vect_pipeline_televir_classic
+        elif pipeline_name in ConstantsSettings.vect_pipeline_televir_mapping_only:
+            return ConstantsSettings.vect_pipeline_televir_mapping_only
+        elif pipeline_name in ConstantsSettings.vect_pipeline_televir_screening:
+            return ConstantsSettings.vect_pipeline_televir_screening
+        else:
+            return [pipeline_name]  
+
+    @staticmethod
     def reverse_set_dict(dict: Dict[str, str]):
         new_dict: Dict[str, list] = {}
         for key, value in dict.items():

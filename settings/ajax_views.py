@@ -949,10 +949,13 @@ def turn_on_off_software(request):
                         )
 
                         makeup = (
-                            pipeline_makeup.match_makeup_name_from_list_classification(
+                            pipeline_makeup.match_makeup_name_from_list(
                                 pipeline_steps_televir_project
                             )
                         )
+
+                        if software.pipeline_step.name in ConstantsSettings.vect_pipeline_televir_classic:
+                            makeup = pipeline_makeup.check_makeuplist_has_classification(pipeline_steps_televir_project)
 
                         if makeup is None:
                             data["message"] = (
@@ -971,9 +974,15 @@ def turn_on_off_software(request):
                                 )
                             )
 
-                            makeup = pipeline_makeup.match_makeup_name_from_list_classification(
-                                pipeline_steps_televir_global
+                            makeup = (
+                                pipeline_makeup.match_makeup_name_from_list(
+                                    pipeline_steps_televir_project
+                                )
                             )
+
+                            if software.pipeline_step.name in ConstantsSettings.vect_pipeline_televir_classic:
+                                makeup = pipeline_makeup.check_makeuplist_has_classification(pipeline_steps_televir_project)
+
                             if makeup is None:
                                 data["message"] = (
                                     "You cannot perform this operation. Deployment would not meet minimum pipeline step requirements."

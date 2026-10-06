@@ -1645,6 +1645,9 @@ class RunMappingTable(tables.Table):
             if record.panel is not None:
                 prefix += record.panel.name + " - "
 
+        elif record.run_type == RunMain.RUN_TYPE_CONTROL_MAPPING:
+            prefix = "Control - "
+
         return f"{prefix}{record.parameter_set.leaf.index}"
 
     def render_enrichment(self, record: RunMainWrapper):

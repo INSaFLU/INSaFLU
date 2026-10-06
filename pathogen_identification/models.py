@@ -658,6 +658,7 @@ class RunMain(models.Model):
     RUN_TYPE_SCREENING = 3
     RUN_TYPE_COMBINED_MAPPING = 4
     RUN_TYPE_PANEL_MAPPING = 5
+    RUN_TYPE_CONTROL_MAPPING = 6
 
     STATUS_DEFAULT = 0
     STATUS_PREP = 1
@@ -673,6 +674,10 @@ class RunMain(models.Model):
         ReferencePanel, on_delete=models.CASCADE, blank=True, null=True
     )
     created_in = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    controls = models.ManyToManyField(
+        PIProject_Sample, blank=True, related_name="run_controls"
+    )
 
     parameter_set = models.ForeignKey(
         ParameterSet, on_delete=models.CASCADE, related_name="run_main", default=None
@@ -773,6 +778,11 @@ class RunMain(models.Model):
         ordering = [
             "name",
         ]
+
+    def __post_init__(self):
+        self.last_modified = datetime.datetime.now()
+        controls = PIProject_Sample.objects.filter(project=self.project, is_control=True)
+        self.controls.set(controls)
 
     def __str__(self):
         return self.name

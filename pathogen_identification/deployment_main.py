@@ -463,27 +463,36 @@ class Run_Main_from_Leaf:
             return False
 
         self.container.run_main_prep_dump_tables()
+        if self.run_pk is not None:
+            self.container.run_engine.run_pk = self.run_pk
+
+        if (
+            self.container.run_engine.run_type
+            == RunMainTree_class.RUN_TYPE_SCREENING
+        ):
+            self.container.run_engine.remap_params.manual_references_include = True
 
         try:
 
-            if self.run_pk is not None:
-                self.container.run_engine.run_pk = self.run_pk
 
-            if (
-                self.container.run_engine.run_type
-                == RunMainTree_class.RUN_TYPE_SCREENING
-            ):
-                self.container.run_engine.remap_params.manual_references_include = True
+
+
 
             if self.mapping_request:
                 self.container.run_engine.run_type = (
                     RunMainTree_class.RUN_TYPE_MAPPING_REQUEST
                 )
-
-                self.container.run_engine.metadata_tool.get_mapping_references(
-                    self.run_pk,
-                    max_accids=self.container.run_engine.remap_params.max_accids,
-                )
+                if (
+                    self.container.run_engine.run_type
+                    == RunMainTree_class.RUN_TYPE_COMBINED_MAPPING
+                ):
+                    self.container.run_engine.metadata_tool.get_mapping_references(
+                        self.run_pk,
+                        max_accids=self.container.run_engine.remap_params.max_accids,
+                    )
+                else:
+                    self.container.run_engine.metadata_tool.get_mapping_references(
+                        self.run_pk)
 
             if self.combined_analysis:
                 self.container.run_engine.run_type = (

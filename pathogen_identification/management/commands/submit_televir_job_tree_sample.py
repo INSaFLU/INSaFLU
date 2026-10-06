@@ -129,7 +129,6 @@ class Command(BaseCommand):
                         deployment_tree = Tree_Progress(
                             module_tree, project_sample, project, output_directory=output_directory
                         )
-                        print("############ deployment tree")
                         graph_progress.generate_graph()
 
                         deployment_tree.cycle_process()

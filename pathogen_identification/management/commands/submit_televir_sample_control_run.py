@@ -66,11 +66,12 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--panel_id",
+            "--mapping_run_id",
             type=int,
-            help="mapping_panel to be used (pk)",
+            help="mapping run to be used (pk)",
             required=False,
         )
+
 
         parser.add_argument(
             "-o",
@@ -86,28 +87,23 @@ class Command(BaseCommand):
         user = User.objects.get(pk=options["user_id"])
         target_sample = PIProject_Sample.objects.get(pk=options["sample_id"])
         project = target_sample.project
-        panel = ReferencePanel.objects.get(pk=options["panel_id"])
         leaf_index = options["leaf_id"]
         matched_path_node = SoftwareTreeNode.objects.get(pk=leaf_index)
+        run_id = options["mapping_run_id"]
+        mapping_run = RunMain.objects.get(pk=run_id)
 
-        ###############################3
+        ###############################
         reference_manager = SampleReferenceManager(target_sample)
-        references = RawReference.objects.filter(panel=panel)
-        run_panel_copy = reference_manager.copy_panel(panel)
+        references = reference_manager.control_references_to_map(run = mapping_run)
 
-        panel_mapping_run = reference_manager.mapping_request_panel_run_from_leaf(
-            matched_path_node, panel_pk=run_panel_copy.pk
-        )
         for reference in references:
             reference.pk = None
-            reference.run = panel_mapping_run
-            reference.panel = run_panel_copy
+            reference.run = mapping_run
             reference.save()
-
+        
         combined_analysis = options["combined_analysis"]
         mapping_request = options["mapping_request"]
-        mapping_run_pk = panel_mapping_run.pk
-
+        mapping_run_pk = mapping_run.pk
 
         ### PROCESS CONTROLER
         process_controler = ProcessControler()
@@ -115,7 +111,7 @@ class Command(BaseCommand):
 
         process_SGE.set_process_controler(
             user,
-            process_controler.get_name_televir_project_sample_panel_map(
+            process_controler.get_name_televir_project_sample_control_map(
                 sample_pk=target_sample.pk,
                 leaf_pk=matched_path_node.pk,
             ),
@@ -193,7 +189,7 @@ class Command(BaseCommand):
 
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_project_sample_panel_map(
+                process_controler.get_name_televir_project_sample_control_map(
                     sample_pk=target_sample.pk,
                     leaf_pk=matched_path_node.pk,
                 ),
@@ -206,7 +202,7 @@ class Command(BaseCommand):
 
             process_SGE.set_process_controler(
                 user,
-                process_controler.get_name_televir_project_sample_panel_map(
+                process_controler.get_name_televir_project_sample_control_map(
                     sample_pk=target_sample.pk,
                     leaf_pk=matched_path_node.pk,
                 ),

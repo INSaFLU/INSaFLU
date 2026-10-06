@@ -2009,6 +2009,11 @@ class ProcessControler(models.Model):
         return "{}_televir_panel_map_{}_{}".format(
             ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
         )
+    
+    def get_name_televir_project_sample_control_map(self, sample_pk, leaf_pk):
+        return "{}_televir_control_map_{}_{}".format(
+            ProcessControler.PREFIX_TELEVIR_PROJECT, sample_pk, leaf_pk
+        )
 
     def get_name_televir_project_sample_metagenomics(self, sample_pk):
         return "{}_combined_metagen_{}".format(

@@ -408,6 +408,71 @@ def submit_sample_mapping_televir(request):
 
 @login_required
 @require_POST
+def submit_control_mapping(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
+
+        project_id = int(request.POST["project_id"])
+        project = Projects.objects.get(id=int(project_id))
+        user = request.user
+        process_SGE = ProcessSched()
+        
+        if request.user != project.owner:
+            data["is_ok"] = False
+            data["message"] = "User is not the owner of the project"
+            return JsonResponse(data)
+        
+        samples = PIProject_Sample.objects.filter(project__pk=project_id, is_control=True)
+        software_utils = SoftwareTreeUtils(user, project)
+
+        try:
+            for sample in samples:
+
+                runs_to_deploy, _ = software_utils.check_runs_to_submit_mapping_only(sample)
+
+                if len(runs_to_deploy) == 0:
+                    continue
+                runs_to_deploy = runs_to_deploy.get(sample, [])
+
+                for leaf in runs_to_deploy:
+                    mapping_run = reference_manager.control_mapping_run_from_leaf(
+                        leaf
+                    )
+                    ###############################
+                    reference_manager = SampleReferenceManager(sample)
+                    references = reference_manager.control_references_to_map(run = mapping_run)
+
+                    for reference in references:
+                        reference.pk = None
+                        reference.run = mapping_run
+                        reference.save()
+
+                    taskID = (
+                        process_SGE.set_submit_televir_sample_metagenomics(
+                            user=request.user,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                            mapping_request=True,
+                            map_run_pk=mapping_run.pk,
+                        )
+                    )
+                    data["is_deployed"] = True
+                    samples_submitted += 1
+
+        except Exception as e:
+            print(e)
+            print("error")
+            errors = f" Error deploying control mapping for project {project.name}"
+
+            data["is_ok"] = False
+
+        data["message"] = f"Deployed {samples_submitted} samples. {errors}"
+
+        return JsonResponse(data)
+
+
+@login_required
+@require_POST
 def available_televir_files(request):
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":

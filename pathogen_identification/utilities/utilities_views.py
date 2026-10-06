@@ -485,6 +485,36 @@ class SampleReferenceManager:
             self.proxy_leaf_prepare()
         )
         self.prep_storage()
+    
+    def control_references_to_map(self, run: RunMain) -> QuerySet[RawReference]:
+        """
+        get references to map
+        """
+        ### References in this project in general
+        references = RawReference.objects.filter(
+            run__project = run.project,
+        )
+
+        ### already mapped in control (to exclude)
+        references_control_mapped = references.filter(
+            run__project__sample__in = run.controls.all(),
+            status__in = [RawReference.STATUS_MAPPED, RawReference.STATUS_MAPPING],
+        ).distinct("accid", "taxid").values_list("taxid", flat=True)
+
+        ### Mapped only in samples
+        references_control_unmapped= references.exclude(
+            run__project__sample__in = run.controls.all(),
+        )
+        ### Filter for mapped or mapping and filter out those already mapped in control
+        references_control_unmapped = references_control_unmapped.filter(
+            status__in = [RawReference.STATUS_MAPPED, RawReference.STATUS_MAPPING],
+        ).distinct("accid", "taxid")
+
+        references_control_unmapped = references_control_unmapped.exclude(
+            taxid__in = references_control_mapped,
+        ).distinct("accid", "taxid")
+
+        return references_control_unmapped
 
     def add_reference(self, reference: ReferenceSourceFileMap):
         ref_description = reference.description

@@ -274,6 +274,11 @@ urlpatterns = [
         name="map_panels_project_samples",
     ),
     path(
+        "deploy_control_mapping_request",
+        PIajax_views.submit_control_mapping,
+        name="map_controls_project_samples",
+    ),
+    path(
         "deploy_mapping_screeing",
         PIajax_views.submit_sample_screening_televir,
         name="deploy_screening_televir_project_sample",

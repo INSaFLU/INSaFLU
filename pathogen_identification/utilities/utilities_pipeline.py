@@ -1960,10 +1960,10 @@ class Parameter_DB_Utility:
         leaves = []
         for node in tree_nodes:
             if node.parent:
-                edges.append((node.parent.index, node.index))
-            nodes.append((node.index, (node.name, node.value, node.node_type)))
+                edges.append((node.parent.index, node.tree_index))
+            nodes.append((node.tree_index, (node.name, node.value, node.node_type)))
             if node.node_place == 1:
-                leaves.append(node.index)
+                leaves.append(node.tree_index)
 
         return PipelineTree(
             technology=software_tree.technology,
@@ -1977,9 +1977,9 @@ class Parameter_DB_Utility:
         """ """
 
         parent = leaf.parent
-        path = [(leaf.index, leaf.name, leaf.value, leaf.node_type)]
+        path = [(leaf.tree_index, leaf.name, leaf.value, leaf.node_type)]
         while parent is not None:
-            path.append((parent.index, parent.name, parent.value, parent.node_type))
+            path.append((parent.tree_index, parent.name, parent.value, parent.node_type))
             parent = parent.parent
 
         path = path[::-1]
@@ -2365,7 +2365,6 @@ class Utils_Manager:
         )
 
         reduced_tree.software_tree_pk = tree.software_tree_pk
-        #reduced_tree.index_to_pk = tree.index_to_pk
 
         return reduced_tree
 
@@ -2703,6 +2702,7 @@ class SoftwareTreeUtils:
                     node_type=tree_node[1][2],
                     parent=software_parent,
                     node_place=SoftwareTreeNode.LEAF_node if is_leaf else SoftwareTreeNode.INTERNAL_node,
+                    index = software_tree.new_leaf_index
                 )
                 software_node.save()
             
@@ -2773,6 +2773,7 @@ class SoftwareTreeUtils:
                         node_type=node[2],
                         parent=parent_node,
                         node_place=is_leaf,
+                        index = software_tree.new_leaf_index
                     )
                     with transaction.atomic():
                         tree_node.save()

@@ -39,6 +39,8 @@ from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
 
+
+
 class QCSoftware:
     """
     Class to manage QC software
@@ -486,35 +488,7 @@ class SampleReferenceManager:
         )
         self.prep_storage()
     
-    def control_references_to_map(self, run: RunMain) -> QuerySet[RawReference]:
-        """
-        get references to map
-        """
-        ### References in this project in general
-        references = RawReference.objects.filter(
-            run__project = run.project,
-        )
 
-        ### already mapped in control (to exclude)
-        references_control_mapped = references.filter(
-            run__project__sample__in = run.controls.all(),
-            status__in = [RawReference.STATUS_MAPPED, RawReference.STATUS_MAPPING],
-        ).distinct("accid", "taxid").values_list("taxid", flat=True)
-
-        ### Mapped only in samples
-        references_control_unmapped= references.exclude(
-            run__project__sample__in = run.controls.all(),
-        )
-        ### Filter for mapped or mapping and filter out those already mapped in control
-        references_control_unmapped = references_control_unmapped.filter(
-            status__in = [RawReference.STATUS_MAPPED, RawReference.STATUS_MAPPING],
-        ).distinct("accid", "taxid")
-
-        references_control_unmapped = references_control_unmapped.exclude(
-            taxid__in = references_control_mapped,
-        ).distinct("accid", "taxid")
-
-        return references_control_unmapped
 
     def add_reference(self, reference: ReferenceSourceFileMap):
         ref_description = reference.description
@@ -746,6 +720,10 @@ class SampleReferenceManager:
 
         return mapping_run
 
+    def control_mapping_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
+        """ """
+        return self.create_mapping_run(leaf, RunMain.RUN_TYPE_CONTROL_MAPPING)
+
     def mapping_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
         """ """
         return self.create_mapping_run(leaf, RunMain.RUN_TYPE_COMBINED_MAPPING)
@@ -771,7 +749,7 @@ class RunMainWrapper:
 
     def __init__(self, run: RunMain):
 
-        self.name = f"run {run.parameter_set.leaf.index}"
+        self.name = f"run {run.parameter_set.leaf.id_str}"
 
         self.record = run
         self.user = run.project.owner
@@ -1079,7 +1057,7 @@ class FinalReportCompound:
 
         for ref in references_found_in:
 
-            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}-{ref.run.parameter_set.leaf.index}"
+            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}-{ref.run.parameter_set.leaf.id_str}"
 
             if ref.run.run_type in [
                 RunMain.RUN_TYPE_MAP_REQUEST,
@@ -2493,7 +2471,7 @@ class RawReferenceCompound:
 
     @property
     def runs_str(self):
-        return ", ".join([str(r.parameter_set.leaf.index) for r in self.runs])
+        return ", ".join([str(r.parameter_set.leaf.id_str) for r in self.runs])
 
 
 class RawReferenceUtils:

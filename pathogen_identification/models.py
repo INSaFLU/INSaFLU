@@ -189,6 +189,14 @@ class SoftwareTree(models.Model):
             self.pipeline_type = self.PIPELINE_TYPE_SCREENING
 
         self.save()
+    
+    @property 
+    def new_leaf_index(self):
+        leaves = SoftwareTreeNode.objects.filter(software_tree=self, node_place=SoftwareTreeNode.LEAF_node)
+        if not leaves.exists():
+            return 0
+        max_index = leaves.aggregate(models.Max('index'))['index__max']
+        return max_index + 1
 
 class SoftwareTreeNode(models.Model):
     INTERNAL_node = 0
@@ -196,7 +204,7 @@ class SoftwareTreeNode(models.Model):
     id = models.AutoField(primary_key=True)
 
     software_tree = models.ForeignKey(SoftwareTree, on_delete=models.CASCADE)
-    index = models.SmallIntegerField(default=-1)
+    tree_index = models.SmallIntegerField(default=-1)
     name = models.CharField(
         max_length=200,
         db_index=True,
@@ -234,6 +242,10 @@ class SoftwareTreeNode(models.Model):
     @property
     def is_leaf(self):
         return self.node_place == SoftwareTreeNode.LEAF_node
+
+    @property
+    def id_str(self):
+        return f"{self.software_tree.global_index}-{self.tree_index}"
     
     def get_descendants(self, include_self: bool = True):
         """return all descendants of this node"""
@@ -494,7 +506,7 @@ class Submitted(models.Model):
     date_submitted = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.parameter_set.sample.name + " " + self.parameter_set.leaf.index
+        return self.parameter_set.sample.name + " " + self.parameter_set.leaf.id_str
 
 
 class Processed(models.Model):
@@ -502,7 +514,7 @@ class Processed(models.Model):
     date_processed = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.parameter_set.sample.name + " " + str(self.parameter_set.leaf.index)
+        return self.parameter_set.sample.name + " " + str(self.parameter_set.leaf.id_str)
 
 
 class SampleQC(models.Model):
@@ -1494,7 +1506,7 @@ class TelefluMapping(models.Model):
     @property
     def mapping_directory(self):
         return os.path.join(
-            self.teleflu_project.project_teleflu_directory, str(self.leaf.index)
+            self.teleflu_project.project_teleflu_directory, str(self.leaf.id_str)
         )
 
     @property
@@ -1504,7 +1516,7 @@ class TelefluMapping(models.Model):
     @property
     def variants_mapping_vcf(self):
         filename = (
-            f"teleflu_{self.leaf.index}_project_{self.teleflu_project.pk}_stacked.vcf"
+            f"teleflu_{self.leaf.id_str}_project_{self.teleflu_project.pk}_stacked.vcf"
         )
         return os.path.join(self.mapping_directory, filename)
 
@@ -1526,7 +1538,7 @@ class TelefluMapping(models.Model):
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
             accid__in=self.teleflu_project.raw_reference.accids,
-            run__parameter_set__leaf__index=self.leaf.index,
+            run__parameter_set__leaf__pk=self.leaf.pk,
             run__status__in=[
                 RunMain.STATUS_RUNNING,
                 RunMain.STATUS_PREP,
@@ -1547,7 +1559,7 @@ class TelefluMapping(models.Model):
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
             accid__in=accids,
-            run__parameter_set__leaf__index=self.leaf.index,
+            run__parameter_set__leaf__pk=self.leaf.pk,
             run__parameter_set__status=ParameterSet.STATUS_FINISHED,
             status=RawReference.STATUS_MAPPED,
         )
@@ -1585,7 +1597,7 @@ class TelefluMapping(models.Model):
 
             sample_summary[sample.name] = {
                 "reference": self.teleflu_project.raw_reference.description,
-                "leaf": self.leaf.index,
+                "leaf": self.leaf.id_str,
                 "mapped": False,
                 "success": False,
                 "coverage": "N/A",
@@ -1600,11 +1612,15 @@ class TelefluMapping(models.Model):
             success = False
 
             mapping_status = "Not started"
+            if self.leaf is None:
+                mapping_status = "No leaf selected"
+                sample_summary[sample.name]["mapped"] = mapping_status
+                continue
 
             refs_all = RawReference.objects.filter(
                 Q(accid__in=accids)
                 & Q(run__parameter_set__sample=sample)
-                & Q(run__parameter_set__leaf__index=self.leaf.index)
+                & Q(run__parameter_set__leaf__pk=self.leaf.pk)
                 & Q(status=RawReference.STATUS_MAPPED)
             ).distinct()
 
@@ -1620,7 +1636,7 @@ class TelefluMapping(models.Model):
 
             reports = FinalReport.objects.filter(
                 run__parameter_set__sample=sample,
-                run__parameter_set__leaf__index=self.leaf.index,
+                run__parameter_set__leaf__pk=self.leaf.pk,
                 unique_id__in=accids,
             )
 
@@ -2386,7 +2402,7 @@ class RawReferenceCompoundModel(models.Model):
             return ""
         else:
             return ", ".join(
-                [str(run.parameter_set.leaf.index) for run in self.runs.all()]
+                [str(run.parameter_set.leaf.tree_index) for run in self.runs.all()]
             )
 
 

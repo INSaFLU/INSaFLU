@@ -365,7 +365,7 @@ class Run_Main_from_Leaf:
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
         ########################################
-        prefix = f"{simplify_name_lower(input_data.name)}_run{pipeline_leaf.index}"
+        prefix = f"{simplify_name_lower(input_data.name)}_r{pipeline_leaf.id_str}"
         self.date_submitted = datetime.datetime.now()
 
         self.technology = input_data.sample.get_type_technology()

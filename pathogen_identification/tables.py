@@ -1648,7 +1648,7 @@ class RunMappingTable(tables.Table):
         elif record.run_type == RunMain.RUN_TYPE_CONTROL_MAPPING:
             prefix = "Control - "
 
-        return f"{prefix}{record.parameter_set.leaf.index}"
+        return f"{prefix}{record.parameter_set.leaf.id_str}"
 
     def render_enrichment(self, record: RunMainWrapper):
         method_name = record.get_pipeline_software(
@@ -1832,19 +1832,8 @@ class RunMainTable(tables.Table):
         return mark_safe(record.runtime)
 
     def render_name(self, record: RunMainWrapper):
-        prefix = ""
 
-        if record.run_type == RunMain.RUN_TYPE_MAP_REQUEST:
-            prefix = "Request - "
-        elif record.run_type == RunMain.RUN_TYPE_COMBINED_MAPPING:
-            prefix = "Combined - "
-
-        elif record.run_type == RunMain.RUN_TYPE_PANEL_MAPPING:
-            prefix = "Panel - "
-            if record.panel is not None:
-                prefix += record.panel.name + " - "
-
-        return f"{prefix}{record.parameter_set.leaf.index}"
+        return f"{record.parameter_set.leaf.id_str}"
 
     def render_enrichment(self, record: RunMainWrapper):
         method_name = record.get_pipeline_software(

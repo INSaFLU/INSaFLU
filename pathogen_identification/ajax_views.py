@@ -13,6 +13,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
+from django.db.models.query import QuerySet
 
 from constants.constants import Constants, FileType, TypePath
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
@@ -247,7 +248,7 @@ def deploy_remap(
                     run__run_type__in=[RunMain.RUN_TYPE_MAP_REQUEST],
                     run__sample__pk=sample_id,
                 )
-                .values_list("run__parameter_set__leaf__index", flat=True)
+                .values_list("run__parameter_set__leaf__tree_index", flat=True)
                 .distinct()
             )
 
@@ -268,7 +269,7 @@ def deploy_remap(
                     run__run_type__in=[RunMain.RUN_TYPE_MAP_REQUEST],
                     run__sample__pk=sample_id,
                 )
-                .values_list("run__parameter_set__leaf__index", flat=True)
+                .values_list("run__parameter_set__leaf__tree_index", flat=True)
                 .distinct()
             )
 
@@ -317,7 +318,7 @@ def deploy_remap(
                     for reference_id in reference_id_list:
                         reference = RawReference.objects.get(pk=int(reference_id))
                         if reference.accid in references_mapped_dict:
-                            if leaf.index in references_mapped_dict[reference.accid]:
+                            if leaf.pk in references_mapped_dict[reference.accid]:
                                 deployed_refs[sample][leaf]["not_deployed"].append(
                                     reference.accid
                                 )
@@ -369,11 +370,11 @@ def deploy_remap(
             for sample, leaves_to_deploy in runs_to_deploy.items():
                 for leaf in leaves_to_deploy:
                     if len(deployed_refs[sample][leaf]["deployed"]) > 0:
-                        message += f"Leaf {leaf.index}, deployed references: {', '.join(deployed_refs[sample][leaf]['deployed'])}. "
+                        message += f"Leaf {leaf.tree_index}, deployed references: {', '.join(deployed_refs[sample][leaf]['deployed'])}. "
                         total_runs_deployed += 1
 
                     if len(deployed_refs[sample][leaf]["not_deployed"]) > 0:
-                        message += f"References: {', '.join(deployed_refs[sample][leaf]['not_deployed'])} already mapped for Leaf {leaf.index}. "
+                        message += f"References: {', '.join(deployed_refs[sample][leaf]['not_deployed'])} already mapped for Leaf {leaf.tree_index}. "
 
             if total_runs_deployed == 0:
                 data["is_deployed"] = False
@@ -405,27 +406,59 @@ def submit_sample_mapping_televir(request):
 
     return JsonResponse({"is_ok": False})
 
+def control_references_to_map(project, controls) -> QuerySet[RawReference]:
+    """
+    get references to map
+    """
+    ### References in this project in general
+    references = RawReference.objects.filter(
+        run__project = project,
+    )
+
+    ### already mapped in control (to exclude)
+    references_control_mapped = references.filter(
+        run__sample__in = controls,
+        status__in = [RawReference.STATUS_MAPPED, RawReference.STATUS_MAPPING],
+    ).distinct("accid", "taxid").values_list("taxid", flat=True)
+
+    ### Mapped only in samples
+    references_control_unmapped= references.exclude(
+        run__sample__in = controls,
+    )
+    ### Filter for mapped or mapping and filter out those already mapped in control
+    references_control_unmapped = references_control_unmapped.filter(
+        status__in = [RawReference.STATUS_MAPPED, RawReference.STATUS_MAPPING],
+    ).distinct("accid", "taxid")
+
+    references_control_unmapped = references_control_unmapped.exclude(
+        taxid__in = references_control_mapped,
+    ).distinct("accid", "taxid")
+
+    return references_control_unmapped
 
 @login_required
 @require_POST
 def submit_control_mapping(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
-
-        project_id = int(request.POST["project_id"])
-        project = Projects.objects.get(id=int(project_id))
-        user = request.user
-        process_SGE = ProcessSched()
-        
-        if request.user != project.owner:
-            data["is_ok"] = False
-            data["message"] = "User is not the owner of the project"
-            return JsonResponse(data)
-        
-        samples = PIProject_Sample.objects.filter(project__pk=project_id, is_control=True)
-        software_utils = SoftwareTreeUtils(user, project)
+        references = []
 
         try:
+            project_id = int(request.POST["project_id"])
+            project = Projects.objects.get(id=int(project_id))
+            user = request.user
+            process_SGE = ProcessSched()
+
+            if request.user != project.owner:
+                data["is_ok"] = False
+                data["message"] = "User is not the owner of the project"
+                return JsonResponse(data)
+            
+            samples = PIProject_Sample.objects.filter(project__pk=project_id, is_control=True)
+            software_utils = SoftwareTreeUtils(user, project)
+            samples_submitted = 0
+            references = control_references_to_map(project, samples)
+
             for sample in samples:
 
                 runs_to_deploy, _ = software_utils.check_runs_to_submit_mapping_only(sample)
@@ -433,14 +466,12 @@ def submit_control_mapping(request):
                 if len(runs_to_deploy) == 0:
                     continue
                 runs_to_deploy = runs_to_deploy.get(sample, [])
-
                 for leaf in runs_to_deploy:
+                    reference_manager = SampleReferenceManager(sample)
                     mapping_run = reference_manager.control_mapping_run_from_leaf(
                         leaf
                     )
                     ###############################
-                    reference_manager = SampleReferenceManager(sample)
-                    references = reference_manager.control_references_to_map(run = mapping_run)
 
                     for reference in references:
                         reference.pk = None
@@ -461,12 +492,14 @@ def submit_control_mapping(request):
 
         except Exception as e:
             print(e)
+            import traceback
+            traceback.print_exc()
             print("error")
             errors = f" Error deploying control mapping for project {project.name}"
 
             data["is_ok"] = False
 
-        data["message"] = f"Deployed {samples_submitted} samples. {errors}"
+        data["message"] = f"Deployed {samples_submitted} samples -- against {len(references)}. {errors}"
 
         return JsonResponse(data)
 
@@ -2044,7 +2077,7 @@ def teleflu_node_info(params_df, leaf: SoftwareTreeNode):
 
     node_info = {
         "pk": leaf.pk,
-        "node": f"{leaf.software_tree.global_index}-{leaf.index}",
+        "node": f"{leaf.software_tree.global_index}-{leaf.tree_index}",
         "tree": leaf.software_tree.global_index,
         "modules": [],
     }

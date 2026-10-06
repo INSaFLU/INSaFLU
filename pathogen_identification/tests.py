@@ -549,7 +549,7 @@ def generate_compressed_tree(user, project, sample, makeup):
     }
 
     assert set(list(matched_paths.keys())) == set(
-        [x.index for x in runs_to_deploy[sample]]
+        [x.tree_index for x in runs_to_deploy[sample]]
     )
 
     module_tree = utils_manager.module_tree(pipeline_tree, list(matched_paths.values()))
@@ -1638,7 +1638,7 @@ class Televir_Project_Test(TestCase):
             }
 
             assert set(list(matched_paths.keys())) == set(
-                [x.index for x in runs_to_deploy[self.ont_project_sample]]
+                [x.tree_index for x in runs_to_deploy[self.ont_project_sample]]
             )
 
             module_tree = utils_manager.module_tree(

@@ -1257,7 +1257,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
         self.kwargs["teleflu_project_name"] = (
             f"Focus: {teleflu_mapping.teleflu_project.raw_reference.description_first}"
         )
-        self.kwargs["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.index}"
+        self.kwargs["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.id_str}"
 
     def get_context_data(self, **kwargs):
         context = super(TelefluMappingIGV, self).get_context_data(**kwargs)
@@ -1306,7 +1306,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
 
         for sample in televir_project_samples:
             ref_select = filter_reference_maps_select(
-                sample, teleflu_mapping.leaf.index, accid_list_simple
+                sample, teleflu_mapping.leaf.pk, accid_list_simple
             )
             if ref_select is None:
                 continue
@@ -1342,7 +1342,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
         context["teleflu_project_name"] = (
             f"Focus: {teleflu_project.raw_reference.description_first}"
         )
-        context["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.index}"
+        context["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.id_str}"
 
         return context
 
@@ -1383,7 +1383,7 @@ def get_mapping_bams_zip(request, pk):
 
     for sample in televir_project_samples:
         ref_select = filter_reference_maps_select(
-            sample, teleflu_mapping.leaf.index, accid_list_simple
+            sample, teleflu_mapping.leaf.pk, accid_list_simple
         )
         if ref_select is None:
             continue
@@ -1573,7 +1573,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
                 run_type__in=[
                     RunMain.RUN_TYPE_PIPELINE,
                 ],
-            ).order_by("-parameter_set__leaf__index")
+            ).order_by("-parameter_set__leaf__tree_index")
 
             run_mapping = RunMain.objects.filter(
                 sample__pk=sample_pk,
@@ -1589,6 +1589,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
                     RunMain.RUN_TYPE_MAP_REQUEST,
                     RunMain.RUN_TYPE_COMBINED_MAPPING,
                     RunMain.RUN_TYPE_PANEL_MAPPING,
+                    RunMain.RUN_TYPE_CONTROL_MAPPING
                 ],
                 status__in=[
                     RunMain.STATUS_DEFAULT,
@@ -1610,6 +1611,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
             sample_name = "sample"
             project_name = "project"
 
+        print(runs)
         wrapped_runs = [RunMainWrapper(run) for run in runs]
         runs_table = RunMainTable(
             wrapped_runs, exclude=("created", "nmapped", "mapping")
@@ -2684,7 +2686,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
         self.kwargs["sample_name"] = sample.sample.name
         self.kwargs["project_name"] = sample.project.name
-        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.index
+        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.id_str
 
     def get_context_data(self, **kwargs):
         project_pk = int(self.kwargs["pk1"])
@@ -2731,11 +2733,11 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             messages.error(self.request, "Run parameters do not exist")
             raise Http404
         
-        if run_main_pipeline.parameter_set.leaf.index is None:
+        if run_main_pipeline.parameter_set.leaf.tree_index is None:
             messages.error(self.request, "Run parameters do not exist")
             raise Http404
 
-        run_name = run_main_pipeline.parameter_set.leaf.index
+        run_name = run_main_pipeline.parameter_set.leaf.id_str
         sample_main = run_main_pipeline.sample
         #
         is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
@@ -3224,7 +3226,7 @@ class Scaffold_Remap(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView
 
         self.kwargs["sample_name"] = sample.sample.name
         self.kwargs["project_name"] = sample.project.name
-        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.index
+        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.id_str
 
     def get_context_data(self, **kwargs):
         """"""

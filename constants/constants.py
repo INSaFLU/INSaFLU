@@ -453,7 +453,7 @@ class Constants(object):
         if process_type == Constants.PROCESS_link_files:
             return 4
         if process_type == Constants.PROCESS_televir:
-            return 16
+            return 8
         if process_type == Constants.PROCESS_mapping:
             return 8
         return 4

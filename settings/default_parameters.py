@@ -1286,6 +1286,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
+                pipeline_step=software.pipeline_step.name
             )
         
         elif software.name == SoftwareNames.SOFTWARE_GATK4_name:
@@ -1325,6 +1326,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name
             )
 
         elif software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
@@ -1346,6 +1348,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name
             )
         elif software.name == SoftwareNames.SOFTWARE_KRAKENUNIQ_name:
             return self.get_krakenuniq_default(
@@ -1410,6 +1413,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name
             )
 
         elif software.name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name:
@@ -1417,6 +1421,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name
             )
 
         elif software.name == SoftwareNames.SOFTWARE_VOYAGER_name:

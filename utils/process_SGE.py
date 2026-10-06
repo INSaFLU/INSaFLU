@@ -1113,6 +1113,8 @@ class ProcessSched(object):
             job_name,
             True,
             vect_job_name_wait,
+            cpus= Constants.get_process_cpu(Constants.PROCESS_televir),
+            memory= Constants.get_process_mem_string(Constants.PROCESS_televir)
         )
         try:
             job_id = self.submit_job(path_file)
@@ -1127,6 +1129,7 @@ class ProcessSched(object):
         except:
             raise Exception("Fail to submit the job.")
         return job_id
+
 
     def set_submit_televir_sample_metagenomics(
         self,

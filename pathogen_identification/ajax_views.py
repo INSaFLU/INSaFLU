@@ -1103,8 +1103,7 @@ def kill_televir_project_tree_sample(request):
     """
     kill all processes a sample, set queued to false
     """
-    print("kill_televir_project_tree_sample")
-    print(request.POST)
+
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
@@ -1123,8 +1122,6 @@ def kill_televir_project_tree_sample(request):
             ],
         )
         killed = 0
-        print("## runs_params")
-        print(runs_params)
 
         for single_run_param in runs_params:
             try:  # kill process

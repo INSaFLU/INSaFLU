@@ -19,7 +19,7 @@ from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.run_main import RunMainTree_class
 from pathogen_identification.utilities.televir_parameters import \
     TelevirParameters
-from pathogen_identification.utilities.update_DBs import (
+from pathogen_identification.utilities.update_DBs_tree import (
     Update_Assembly, Update_Classification, Update_Metagenomics, Update_Remap,
     Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
 from pathogen_identification.utilities.utilities_general import \

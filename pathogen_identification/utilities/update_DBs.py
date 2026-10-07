@@ -276,6 +276,40 @@ def Update_Classification(
         print(f"failed to update sample {run_class.sample_name}")
         return False
 
+def Update_Metagenomics_Classification(
+    run_class: RunEngine_class, parameter_set: ParameterSet
+):
+
+    sample, runmain, _ = get_run_parents(run_class, parameter_set)
+
+    read_classification = run_class.read_classification_drone.classification_report
+    map_targets = run_class.metadata_tool.remap_targets
+
+    for target in map_targets:
+
+        try:
+            screening_count = read_classification[
+                read_classification.acc == target.accid
+            ]
+
+            if len(screening_count) > 0:
+                screening_count = screening_count[
+                    screening_count.acc == target.accid
+                ].shape[0]
+            else:
+                screening_count = 0
+
+            compound_ref = RawReferenceCompoundModel.objects.get(
+                taxid=target.taxid,
+                accid=target.accid,
+                sample=sample,
+            )
+            compound_ref.screening_count = screening_count
+            compound_ref.save()
+
+        except RawReferenceCompoundModel.DoesNotExist:
+            pass
+
 
 @transaction.atomic
 def Update_Metagenomics(
@@ -497,62 +531,6 @@ def get_run_parents(run_class: RunEngine_class, parameter_set: ParameterSet) -> 
     return sample, runmain, project
 
 
-def Update_Metagenomics_Classification(
-    run_class: RunEngine_class, parameter_set: ParameterSet
-):
-
-    sample, runmain, _ = get_run_parents(run_class, parameter_set)
-
-    read_classification = run_class.read_classification_drone.classification_report
-    map_targets = run_class.metadata_tool.remap_targets
-
-    for target in map_targets:
-
-        try:
-            screening_count = read_classification[
-                read_classification.acc == target.accid
-            ]
-
-            if len(screening_count) > 0:
-                screening_count = screening_count[
-                    screening_count.acc == target.accid
-                ].shape[0]
-            else:
-                screening_count = 0
-
-            compound_ref = RawReferenceCompoundModel.objects.get(
-                taxid=target.taxid,
-                accid=target.accid,
-                sample=sample,
-            )
-            compound_ref.screening_count = screening_count
-            compound_ref.save()
-
-        except RawReferenceCompoundModel.DoesNotExist:
-            pass
-
-
-#
-# try:
-#    RawReference.objects.get(
-#        run=runmain,
-#        taxid=target.taxid,
-#        accid=target.accid,
-#    )
-# except RawReference.DoesNotExist:
-#
-#    remap_target = RawReference(
-#        run=runmain,
-#        taxid=target.taxid,
-#        accid=target.accid,
-#        status=RawReference.STATUS_MAPPED,
-#        description=summarize_description(target.description),
-#        counts=screening_count,
-#        classification_source="1",
-#    )
-#
-#    remap_target.save()
-#
 
 
 def Update_RunMain_noCheck(

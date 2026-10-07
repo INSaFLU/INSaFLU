@@ -559,7 +559,7 @@ class SampleReferenceManager:
 
         except SoftwareTreeNode.DoesNotExist:
             software_tree_node = SoftwareTreeNode.objects.create(
-                index=-1,
+                tree_index=-1,
                 software_tree=self.software_tree,
                 name="storage",
                 parent=None,

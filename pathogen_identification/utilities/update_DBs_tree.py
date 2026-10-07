@@ -231,6 +231,8 @@ def Update_RunMain_Initial(run_class: RunMainTree_class, parameter_set: Paramete
         return True
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(e)
         print(f"failed to update sample {run_class.sample_name}")
         return False
@@ -254,6 +256,8 @@ def Update_RunMain_Secondary(run_class: RunMainTree_class, parameter_set: Parame
         return True
 
     except IntegrityError as e:
+        import traceback
+        traceback.print_exc()
         print(f"failed to update sample {run_class.sample_name}")
         return False
 
@@ -277,6 +281,8 @@ def Update_Assembly(run_class: RunMainTree_class, parameter_set: ParameterSet):
         return True
 
     except IntegrityError as e:
+        import traceback
+        traceback.print_exc()
         print(f"failed to update sample {run_class.sample_name}")
         return False
 
@@ -365,6 +371,8 @@ def Update_Metagenomics(
         return True
 
     except IntegrityError as e:
+        import traceback
+        traceback.print_exc()
         print(f"failed to update sample {run_class.sample_name}")
         return False
 
@@ -394,6 +402,8 @@ def Update_Remap(run_class: RunMainTree_class, parameter_set: ParameterSet):
         return True
 
     except IntegrityError as e:
+        import traceback
+        traceback.print_exc()
         print(f"failed to update sample {run_class.sample_name}")
         return False
 
@@ -476,12 +486,28 @@ def Update_RunMain(run_class: RunMainTree_class, parameter_set: ParameterSet):
 
     host_depletion_method = run_class.depletion_drone.classifier_method.name
     host_depletion = run_class.depletion_drone.deployed
+    if run_class.run_type == run_class.RUN_TYPE_COMBINED_MAPPING:
+        run_type = RunMain.RUN_TYPE_COMBINED_MAPPING
+    elif run_class.run_type == run_class.RUN_TYPE_SCREENING:
+        run_type = RunMain.RUN_TYPE_SCREENING
+    else:
+        run_type = RunMain.RUN_TYPE_PIPELINE
+    
+
     try:
-        runmain = RunMain.objects.get(
-            project__name=run_class.sample.project_name,
-            sample=sample,
-            parameter_set=parameter_set,
-        )
+        if run_class.run_pk is not None:
+            runmain = RunMain.objects.get(
+                pk=run_class.run_pk,
+            )
+        else:
+            runmain = RunMain.objects.get(
+                project__name=run_class.sample.project_name,
+                suprun=run_class.suprun,
+                sample=sample,
+                name=run_class.prefix,
+                parameter_set=parameter_set,
+                run_type=run_type,
+            )
     except RunMain.DoesNotExist:
         runmain = RunMain(
             parameter_set=parameter_set,

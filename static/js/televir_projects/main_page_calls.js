@@ -299,11 +299,6 @@ $("#deploypi_controls_btn").click(function (e) {
     csrf_token = $('#teleflu_create-button').attr("csrf");
     var url = $('#deploypi_controls_btn').attr("deploy-url");
 
-    console.log("deploypi_controls_btn clicked");
-    console.log("user_id: " + user_id);
-    console.log("project_id: " + project_id);
-    console.log("url: " + url);
-
     // get checked samples rows    
     $.ajax({
         url: url,
@@ -316,11 +311,11 @@ $("#deploypi_controls_btn").click(function (e) {
         },
         data_type: 'json',
         success: function (data) {
+
             if (data["is_ok"] == true && data["is_deployed"] == false) {
                 alert(data["message"]);
             }
-            else if (data["is_ok"] == true && data["is_deployed"] == true) {
-                var how_many = data["samples_deployed"];
+            else if (data["is_ok"] == true && data["is_deployed"] == true) {                
                 alert(data["message"]);
             }
             $.unblockUI();
@@ -350,6 +345,7 @@ $("#deploypi_panels_btn").click(function (e) {
         },
         data_type: 'json',
         success: function (data) {
+
             if (data["is_ok"] == true && data["is_deployed"] == false) {
                 alert(data["message"]);
             }

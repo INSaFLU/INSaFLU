@@ -442,6 +442,7 @@ def submit_control_mapping(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
         references = []
+        errors = ""
 
         try:
             project_id = int(request.POST["project_id"])
@@ -487,7 +488,6 @@ def submit_control_mapping(request):
                             map_run_pk=mapping_run.pk,
                         )
                     )
-                    data["is_deployed"] = True
                     samples_submitted += 1
 
         except Exception as e:
@@ -499,6 +499,8 @@ def submit_control_mapping(request):
 
             data["is_ok"] = False
 
+        data["is_deployed"] = samples_submitted > 0
+        data["samples_deployed"] = samples_submitted
         data["message"] = f"Deployed {samples_submitted} samples -- against {len(references)}. {errors}"
 
         return JsonResponse(data)

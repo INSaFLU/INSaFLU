@@ -168,8 +168,8 @@
     .species-title p { margin-bottom: 0; color: #6b7280; font-size: 0.9rem; }
 
     /* keep previous extra-column handling */
-    .extra-column { display: none; }
-    .show-extra-columns .extra-column { display: table-cell; }
+    .extra-column { display: table-cell; }
+    .show-extra-columns .extra-column { display: none; }
 
 
     #report_table {
@@ -224,11 +224,11 @@
     }
 
     .extra-column {
-    display: none;
+    display: table-cell;
     }
 
     .show-extra-columns .extra-column {
-        display: table-cell;
+        display: none;
     }
 
     .group-spacer td {
@@ -518,6 +518,13 @@
                                             <a href="#" id="showButton" class="custom-link"> Taxon Read Overlap</a>
                                         </span>
                                         {% endif %}
+
+                                        {% if species_bundle.any_in_control %}
+                                        <div class="in-control-circle" style="margin-top:2px; background:#a73528; color:#fff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:700;" role="img" aria-label="Control Flag Present" title="Control Flag Present">
+                                            C
+                                        </div>
+                                        {% endif %}
+
                                     </div>
                                     
                                 </div>
@@ -780,7 +787,7 @@
                                         </tr>
             
                                         {% endif %}
-                                        {% if value.refa_dotplot_exists == True %}
+                                        {% if value.refa_dotplot_exists %}
                                         <tr class="detail ">
                                             <td colspan="1" align="center">
                                                 <p>Assembly to reference dotplot</p>

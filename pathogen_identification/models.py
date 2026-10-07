@@ -189,6 +189,14 @@ class SoftwareTree(models.Model):
             self.pipeline_type = self.PIPELINE_TYPE_SCREENING
 
         self.save()
+    
+    @property 
+    def new_leaf_index(self):
+        leaves = SoftwareTreeNode.objects.filter(software_tree=self, node_place=SoftwareTreeNode.LEAF_node)
+        if not leaves.exists():
+            return 0
+        max_index = leaves.aggregate(models.Max('index'))['index__max']
+        return max_index + 1
 
 class SoftwareTreeNode(models.Model):
     INTERNAL_node = 0
@@ -196,7 +204,7 @@ class SoftwareTreeNode(models.Model):
     id = models.AutoField(primary_key=True)
 
     software_tree = models.ForeignKey(SoftwareTree, on_delete=models.CASCADE)
-    index = models.SmallIntegerField(default=-1)
+    tree_index = models.SmallIntegerField(default=-1)
     name = models.CharField(
         max_length=200,
         db_index=True,
@@ -234,6 +242,10 @@ class SoftwareTreeNode(models.Model):
     @property
     def is_leaf(self):
         return self.node_place == SoftwareTreeNode.LEAF_node
+
+    @property
+    def id_str(self):
+        return f"{self.software_tree.global_index}-{self.tree_index}"
     
     def get_descendants(self, include_self: bool = True):
         """return all descendants of this node"""
@@ -260,6 +272,14 @@ class SoftwareTreeNode(models.Model):
 
         return SoftwareTreeNode.objects.filter(id__in=descendants)
 
+
+class RunBatch(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    nodes = models.ManyToManyField(SoftwareTreeNode, blank=True)
+
+    class Meta:
+        ordering = ["-date_created"]
 
 class LeafParameter(models.Model):
     leaf = models.ForeignKey(SoftwareTreeNode, on_delete=models.CASCADE)
@@ -355,6 +375,10 @@ class PIProject_Sample(models.Model):
         return [int(panel) for panel in panels]
 
     @property
+    def batch_registrations(self):
+        return SampleBatchRegister.objects.filter(sample=self).order_by("-date_registered")
+    
+    @property
     def panels_added(self):
         panels = self.panels_pks
         return ReferencePanel.objects.filter(
@@ -402,6 +426,17 @@ class PIProject_Sample(models.Model):
         if os.path.exists(self.media_dir):
             return self.media_dir
         return None
+
+
+
+class SampleBatchRegister(models.Model):
+    sample = models.ForeignKey(PIProject_Sample, on_delete=models.CASCADE)
+    batch = models.ForeignKey(RunBatch, on_delete=models.CASCADE)
+    date_registered = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date_registered"]
+
 
 class ParameterSet(models.Model):
     STATUS_NOT_STARTED = 0
@@ -471,7 +506,7 @@ class Submitted(models.Model):
     date_submitted = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.parameter_set.sample.name + " " + self.parameter_set.leaf.index
+        return self.parameter_set.sample.name + " " + self.parameter_set.leaf.id_str
 
 
 class Processed(models.Model):
@@ -479,7 +514,7 @@ class Processed(models.Model):
     date_processed = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.parameter_set.sample.name + " " + str(self.parameter_set.leaf.index)
+        return self.parameter_set.sample.name + " " + str(self.parameter_set.leaf.id_str)
 
 
 class SampleQC(models.Model):
@@ -635,6 +670,7 @@ class RunMain(models.Model):
     RUN_TYPE_SCREENING = 3
     RUN_TYPE_COMBINED_MAPPING = 4
     RUN_TYPE_PANEL_MAPPING = 5
+    RUN_TYPE_CONTROL_MAPPING = 6
 
     STATUS_DEFAULT = 0
     STATUS_PREP = 1
@@ -642,6 +678,7 @@ class RunMain(models.Model):
     STATUS_RUNNING = 3
     STATUS_FINISHED = 4
     STATUS_KILLED = 5
+    STATUS_QUEUED = 6
 
     run_type = models.IntegerField(default=RUN_TYPE_PIPELINE)
     status = models.IntegerField(default=STATUS_DEFAULT)
@@ -649,6 +686,10 @@ class RunMain(models.Model):
         ReferencePanel, on_delete=models.CASCADE, blank=True, null=True
     )
     created_in = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
+    controls = models.ManyToManyField(
+        PIProject_Sample, blank=True, related_name="run_controls"
+    )
 
     parameter_set = models.ForeignKey(
         ParameterSet, on_delete=models.CASCADE, related_name="run_main", default=None
@@ -749,6 +790,11 @@ class RunMain(models.Model):
         ordering = [
             "name",
         ]
+
+    def __post_init__(self):
+        self.last_modified = datetime.datetime.now()
+        controls = PIProject_Sample.objects.filter(project=self.project, is_control=True)
+        self.controls.set(controls)
 
     def __str__(self):
         return self.name
@@ -1166,11 +1212,14 @@ class RawReference(models.Model):
     STATUS_UNMAPPED = 1
     STATUS_MAPPING = 2
     STATUS_FAIL = 3
+    STATUS_MISSING = 4
 
     STATUS_CHOICES = (
         (STATUS_MAPPED, "Mapped"),
         (STATUS_UNMAPPED, "Unmapped"),
         (STATUS_MAPPING, "Mapping"),
+        (STATUS_FAIL, "Fail"),
+        (STATUS_MISSING, "Missing")
     )
 
     run = models.ForeignKey(RunMain, blank=True, null=True, on_delete=models.CASCADE)
@@ -1457,7 +1506,7 @@ class TelefluMapping(models.Model):
     @property
     def mapping_directory(self):
         return os.path.join(
-            self.teleflu_project.project_teleflu_directory, str(self.leaf.index)
+            self.teleflu_project.project_teleflu_directory, str(self.leaf.id_str)
         )
 
     @property
@@ -1467,7 +1516,7 @@ class TelefluMapping(models.Model):
     @property
     def variants_mapping_vcf(self):
         filename = (
-            f"teleflu_{self.leaf.index}_project_{self.teleflu_project.pk}_stacked.vcf"
+            f"teleflu_{self.leaf.id_str}_project_{self.teleflu_project.pk}_stacked.vcf"
         )
         return os.path.join(self.mapping_directory, filename)
 
@@ -1489,7 +1538,7 @@ class TelefluMapping(models.Model):
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
             accid__in=self.teleflu_project.raw_reference.accids,
-            run__parameter_set__leaf__index=self.leaf.index,
+            run__parameter_set__leaf__pk=self.leaf.pk,
             run__status__in=[
                 RunMain.STATUS_RUNNING,
                 RunMain.STATUS_PREP,
@@ -1510,7 +1559,7 @@ class TelefluMapping(models.Model):
         refs = RawReference.objects.filter(
             run__parameter_set__sample__in=samples,
             accid__in=accids,
-            run__parameter_set__leaf__index=self.leaf.index,
+            run__parameter_set__leaf__pk=self.leaf.pk,
             run__parameter_set__status=ParameterSet.STATUS_FINISHED,
             status=RawReference.STATUS_MAPPED,
         )
@@ -1548,7 +1597,7 @@ class TelefluMapping(models.Model):
 
             sample_summary[sample.name] = {
                 "reference": self.teleflu_project.raw_reference.description,
-                "leaf": self.leaf.index,
+                "leaf": self.leaf.id_str,
                 "mapped": False,
                 "success": False,
                 "coverage": "N/A",
@@ -1563,11 +1612,15 @@ class TelefluMapping(models.Model):
             success = False
 
             mapping_status = "Not started"
+            if self.leaf is None:
+                mapping_status = "No leaf selected"
+                sample_summary[sample.name]["mapped"] = mapping_status
+                continue
 
             refs_all = RawReference.objects.filter(
                 Q(accid__in=accids)
                 & Q(run__parameter_set__sample=sample)
-                & Q(run__parameter_set__leaf__index=self.leaf.index)
+                & Q(run__parameter_set__leaf__pk=self.leaf.pk)
                 & Q(status=RawReference.STATUS_MAPPED)
             ).distinct()
 
@@ -1583,7 +1636,7 @@ class TelefluMapping(models.Model):
 
             reports = FinalReport.objects.filter(
                 run__parameter_set__sample=sample,
-                run__parameter_set__leaf__index=self.leaf.index,
+                run__parameter_set__leaf__pk=self.leaf.pk,
                 unique_id__in=accids,
             )
 
@@ -1605,12 +1658,7 @@ class TelefluMapping(models.Model):
 
             if reports.exists():
                 report = reports[0]
-                try:
-                    reference_map = ReferenceMap_Main.objects.get(
-                        run=report.run, accid=report.accid
-                    )
-                except ReferenceMap_Main.DoesNotExist:
-                    reference_map = None
+
                 sample_summary[sample.name]["coverage"] = round(reports[0].coverage, 3)
                 sample_summary[sample.name]["windows_covered"] = reports[
                     0
@@ -1887,6 +1935,7 @@ class RunRemapMain(models.Model):
         PIProject_Sample, blank=True, null=True, on_delete=models.CASCADE
     )
     merged_log = models.CharField(max_length=350, blank=True, null=True)
+    missing_log = models.CharField(max_length=350, blank=True, null=True)
     performed = models.BooleanField(default=False)
 
     method = models.CharField(
@@ -1908,6 +1957,19 @@ class RunRemapMain(models.Model):
 
     def __str__(self):
         return self.method
+
+    @property
+    def missing_log_exists(self):
+        if self.missing_log is None:
+            return False
+
+        if self.missing_log == "":
+            return False
+
+        if os.path.isfile(self.missing_log):
+            return True
+
+        return False
 
 
 class ReferenceMap_Main(models.Model):
@@ -2070,6 +2132,30 @@ class FinalReport(models.Model):
     )
 
     control_flag = models.IntegerField(default=CONTROL_FLAG_NONE)
+
+    @property
+    def ref_dotplot_path(self):
+
+        if self.refa_dotplot is None:
+            return None
+        
+        path = os.path.join(
+            PICS.static_directory,
+            self.refa_dotplot
+        )
+
+        if os.path.isfile(path):
+            return path
+
+        return None
+
+    @property
+    def bam_media_exists(self):
+        if self.bam_path is None:
+            return False
+
+        bam_media_path = self.bam_path.replace(PICS.media_directory, "/media")
+        return os.path.isfile(bam_media_path)
 
     @property
     def in_control(self):
@@ -2316,7 +2402,7 @@ class RawReferenceCompoundModel(models.Model):
             return ""
         else:
             return ", ".join(
-                [str(run.parameter_set.leaf.index) for run in self.runs.all()]
+                [str(run.parameter_set.leaf.tree_index) for run in self.runs.all()]
             )
 
 

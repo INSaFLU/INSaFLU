@@ -65,7 +65,7 @@ class AssemblyStore:
     """
     Class to manage assembly storage and retrieval.
     """
-    def __init__(self, store_path: Path):
+    def __init__(self, store_path: Path, user: Optional[User] = None):
         self.store_path = store_path
         os.makedirs(self.store_path, exist_ok=True)
 
@@ -78,7 +78,7 @@ class AssemblyStore:
         self.logger.addHandler(handler)
         self.logger.propagate = False
 
-        self.ncbi = NCBITools()
+        self.ncbi = NCBITools(user=user)
 
     def register_assembly(self, local_assembly: LocalAssembly, cache = False):
         """
@@ -906,7 +906,7 @@ def filter_reference_maps_select(
 
     ref_maps = ReferenceMap_Main.objects.filter(
         sample=sample,
-        run__parameter_set__leaf__index=leaf_id,
+        run__parameter_set__leaf__pk=leaf_id,
         reference__in=reference,
     )
     
@@ -931,18 +931,18 @@ def filter_reference_maps_select(
     return None
 
 
-def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
+def create_televir_igv_report(teleflu_project_pk: int, leaf_pk: int) -> bool:
 
     teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
     try:
         teleflu_mapping = TelefluMapping.objects.get(
-            teleflu_project=teleflu_project, leaf__index=leaf_index
+            teleflu_project=teleflu_project, leaf__pk=leaf_pk
         )
     except TelefluMapping.DoesNotExist:
         return False
     except TelefluMapping.MultipleObjectsReturned:
         teleflu_mapping = TelefluMapping.objects.filter(
-            teleflu_project=teleflu_project, leaf__index=leaf_index
+            teleflu_project=teleflu_project, leaf__pk=leaf_pk
         ).first()
     ### get reference
     teleflu_reference = teleflu_project.raw_reference
@@ -968,7 +968,7 @@ def create_televir_igv_report(teleflu_project_pk: int, leaf_index: int) -> bool:
 
     for sample in televir_project_samples:
 
-        ref_select = filter_reference_maps_select(sample, leaf_index, accid_list_simple)
+        ref_select = filter_reference_maps_select(sample, leaf_pk, accid_list_simple)
 
         if ref_select is None:
             continue

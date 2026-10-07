@@ -303,9 +303,9 @@ var load_teleflu_workflows = function () {
                         csrfmiddlewaretoken: csrf
                     },
                     success: function(data) {
-                        
                         if (data['is_ok'] === true) {
-                            location.reload();
+                            //location.reload();
+                            console.log('Stacked Samples creation started');
                         } else if (data['running'] === true) {
                             alert('Stacked Samples creation is running');
                         } else if (data['exists'] === true) {
@@ -316,11 +316,6 @@ var load_teleflu_workflows = function () {
                     }
                 });
             });
-
-            
-    
-
-
         }
     });
 };
@@ -396,7 +391,6 @@ var addToProject = function (workflow, project_id) {
 
 
 var buttons_background = function () {
-
     $("#id-insaflu-button").click(function () {
         var url = $(this).attr('utl');
         var project_id = $('#id-insaflu-button').attr('project-id');
@@ -413,7 +407,8 @@ var buttons_background = function () {
             success: function (data) {
                 if (data["is_ok"] === true) {
                     alert('INSaFLU Project linked');
-                    location.reload();
+                    //location.reload();
+                    console.log('INSaFLU Project linked');
                 } else if (data["exists"] === true) {
                     alert('INSaFLU Project already exists');
                 } else {
@@ -424,7 +419,6 @@ var buttons_background = function () {
     });
 
     $("#id-map-button").click(function () {
-
         var workflow = $(this).attr('workflow');
         var url = $(this).attr('utl');
         var project_id = $('.workflow-main').attr('project_id');
@@ -442,7 +436,8 @@ var buttons_background = function () {
             success: function (data) {
                 if (data["is_ok"] === true) {
                     alert('Workflow mapped to project');
-                    location.reload();
+                    //location.reload();
+                    console.log('Workflow mapped to project');
                 } else if (data["is_empty"] === true) {
                     alert('No samples to map.');
                 } else {

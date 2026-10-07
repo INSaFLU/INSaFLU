@@ -6,6 +6,7 @@ import subprocess
 import time
 from datetime import datetime
 from typing import List, Optional
+from pathogen_identification.models import PIProject_Sample
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -1083,7 +1084,7 @@ class ProcessSched(object):
             raise Exception("Fail to submit the job.")
         return job_id
 
-    def set_submit_televir_sample(self, user, project_pk: int, sample_pk: int, job_name, vect_job_name_wait):
+    def set_submit_televir_sample(self, user, batch_pk: int, sample_pk: int, job_name, vect_job_name_wait):
         """
         submit the job to televir
         """
@@ -1092,10 +1093,10 @@ class ProcessSched(object):
         outdir_job = self.utils.get_temp_dir()
 
         vect_command = [
-            "python3 {} submit_televir_job_tree_sample --user_id {} --project_id {} --sample_id {} -o {}".format(
+            "python3 {} submit_televir_job_tree_sample --user_id {} --batch_id {} --sample_id {} -o {}".format(
                 os.path.join(settings.BASE_DIR, "manage.py"),
                 user_pk,
-                project_pk,
+                batch_pk,
                 sample_pk,
                 outdir_job,
             )
@@ -1112,6 +1113,8 @@ class ProcessSched(object):
             job_name,
             True,
             vect_job_name_wait,
+            cpus= Constants.get_process_cpu(Constants.PROCESS_televir),
+            memory= Constants.get_process_mem_string(Constants.PROCESS_televir)
         )
         try:
             job_id = self.submit_job(path_file)
@@ -1119,13 +1122,15 @@ class ProcessSched(object):
                 self.set_process_controlers(
                     user,
                     process_controler.get_name_televir_project_sample(
-                        project_pk, sample_pk
+                        batch_pk, sample_pk
                     ),
                     job_id,
                 )
         except:
             raise Exception("Fail to submit the job.")
         return job_id
+
+
 
     def set_submit_televir_sample_metagenomics(
         self,
@@ -1296,49 +1301,6 @@ class ProcessSched(object):
                         file_id=file_id,
                     ),
                     job_id,
-                )
-        except:
-            raise Exception("Fail to submit the job.")
-        return job_id
-
-    def set_submit_televir_job(self, user, project_pk):
-        """
-        submit the job to televir
-        """
-        user_pk = user.pk
-        process_controler = ProcessControler()
-        outdir_job = self.utils.get_temp_dir()
-
-        vect_command = [
-            "python3 {} submit_televir_job --user_id {} --project_id {} -o {}".format(
-                os.path.join(settings.BASE_DIR, "manage.py"),
-                user_pk,
-                project_pk,
-                outdir_job,
-            )
-        ]
-
-        self.logger_production.info("Processing: " + ";".join(vect_command))
-        self.logger_debug.info("Processing: " + ";".join(vect_command))
-        queue_name = user.profile.queue_name_slurm
-        (job_name_wait, job_name) = user.profile.get_name_slurm_seq(
-            Constants.PROCESS_televir, Constants.PROCESS_LINK
-        )
-        path_file = self.set_script_run_slurm(
-            outdir_job,
-            queue_name,
-            vect_command,
-            job_name,
-            True,
-            [job_name_wait],
-            cpus= Constants.get_process_cpu(Constants.PROCESS_televir),
-            memory= Constants.get_process_mem_string(Constants.PROCESS_televir),
-        )
-        try:
-            job_id = self.submit_job(path_file)
-            if job_id != None:
-                self.set_process_controlers(
-                    user, process_controler.get_name_televir_project(project_pk), job_id
                 )
         except:
             raise Exception("Fail to submit the job.")
@@ -1628,12 +1590,11 @@ class ProcessSched(object):
         """
         Kill the process in process controler.
         """
+        sample = PIProject_Sample.objects.get(pk=sample_pk)
+        batch_runs = sample.batch_registrations
         process_controler = ProcessControler()
         names_processes = [
             process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
-            process_controler.get_name_televir_project_sample(
-                project_pk=project_pk, sample_pk=sample_pk
-            ),
             process_controler.get_name_televir_project_sample_metagenomics_run(
                 sample_pk,
                 leaf_pk,
@@ -1642,6 +1603,10 @@ class ProcessSched(object):
                 sample_pk=sample_pk, leaf_pk=leaf_pk
             ),
         ]
+        for register in batch_runs:
+            names_processes.append(
+                process_controler.get_name_televir_project_sample(register.batch.pk, sample_pk)
+            )
 
         processes = ProcessControler.objects.filter(
             owner__id=user_pk,
@@ -1659,13 +1624,13 @@ class ProcessSched(object):
         """
         Kill the process in process controler.
         """
+
         process_controler = ProcessControler()
+        sample = PIProject_Sample.objects.get(pk=sample_pk)
+        batch_runs = sample.batch_registrations
 
         names_processes = [
             process_controler.get_name_televir_run(project_pk, sample_pk, leaf_pk),
-            process_controler.get_name_televir_project_sample(
-                project_pk=project_pk, sample_pk=sample_pk
-            ),
             process_controler.get_name_televir_project_sample_metagenomics_run(
                 sample_pk,
                 leaf_pk,
@@ -1674,6 +1639,13 @@ class ProcessSched(object):
                 sample_pk=sample_pk, leaf_pk=leaf_pk
             ),
         ]
+        for register in batch_runs:
+            names_processes.append(
+                process_controler.get_name_televir_project_sample(register.batch.pk, sample_pk)
+            )
+        
+        print("names_processes", names_processes)
+
 
         processes = ProcessControler.objects.filter(
             owner__id=user_pk,

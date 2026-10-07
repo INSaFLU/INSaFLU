@@ -205,7 +205,7 @@ class SoftwareForm(forms.ModelForm):
 
                 if (
                     parameter.software.name_extended
-                    == SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
+                    in [SoftwareNames.SOFTWARE_BWA_FILTER_name_extended, SoftwareNames.SOFTWARE_BWA_VALIDATION_name_extended]
                 ):
 
                     list_data = [

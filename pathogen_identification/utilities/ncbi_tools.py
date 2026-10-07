@@ -7,15 +7,12 @@ import time
 from dataclasses import dataclass
 from functools import wraps
 from typing import Generator, List, Optional, Tuple
+from django.contrib.auth.models import User
 
 import numpy as np
 import pandas as pd
 from Bio import Entrez
 from decouple import config
-
-Entrez.email = config("NCBI_EMAIL")
-if Entrez.email is None:
-    raise ValueError("NCBI_EMAIL environment variable not set. Please set it to your email address.")
 
 NCBI_TAXONOMY_LEVELS = ['superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 NCBI_TAXONOMY_LEVELS_EXTENDED = ['acellular root', 'realm', 'domain', 'kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
@@ -98,9 +95,6 @@ class ReferenceData(Passport):
 
     def __str__(self):
         return f"TaxID: {self.taxid}, Accession: {self.accession}, Description: {self.description}, Nucleotide ID: {self.nucleotide_id}, Assembly ID: {self.assembly_id}"
-
-
-
 
 
 @retry_with_backoff(max_retries=3, initial_delay=1)
@@ -282,7 +276,12 @@ def retrieve_assembly_sequence(assembly_id, output_path) -> bool:
             os.remove(tmp_path)
 
 class NCBITools:
-    def __init__(self):
+    def __init__(self, user = User):
+
+        Entrez.email = user.email
+        Entrez.max_tries = 1
+        Entrez.sleep_between_tries = 1
+
         self.logger = logging.getLogger('NCBITools')
         self.logger.setLevel(logging.INFO)
         ch = logging.StreamHandler()

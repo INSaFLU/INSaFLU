@@ -165,7 +165,7 @@ class RunDetail_main:
         )
 
         self.preprocess_method.register_modules(
-            [CS.PIPELINE_NAME_extra_qc],
+            [CS.PIPELINE_NAME_extra_qc, CS.PIPELINE_NAME_validation_qc],
         )
 
         self.check_preprocess_exists()
@@ -367,7 +367,7 @@ class RunDetail_main:
     def __init__(self, config: dict, method_args: pd.DataFrame, project_pk: int):
         project = Projects.objects.get(pk=project_pk)
         self.project_name = project.name
-        self.username = project.owner.username
+        self.owner = project.owner
 
         self.prefix = config["prefix"]
         self.suprun = self.prefix
@@ -417,34 +417,6 @@ class RunDetail_main:
             self.deployment_root_dir, self.substructure_dir
         )
 
-        self.media_dir = os.path.join(
-            ConstantsSettings.media_directory, self.substructure_dir
-        )
-        self.static_dir = os.path.join(
-            ConstantsSettings.static_directory, self.substructure_dir
-        )
-
-        self.media_dir_logdir = os.path.join(
-            self.media_dir,
-            "logs",
-        )
-
-        ###
-
-        self.media_dir_classification = os.path.join(
-            self.media_dir,
-            self.dir_classification,
-        )
-
-        self.static_dir_plots = os.path.join(
-            self.static_dir,
-            self.dir_plots,
-        )
-
-        self.media_dir_igv = os.path.join(
-            self.static_dir,
-            self.igv_dir,
-        )
 
         os.makedirs(
             self.media_dir_classification,
@@ -570,35 +542,65 @@ class RunDetail_main:
             prefix="drone",
         )
 
-        ### output files
-        self.params_file_path = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_params.csv",
-        )
-        self.remap_plan_path = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_remap_plan.csv",
-        )
-        self.full_report = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_full_report.tsv",
-        )
-        self.assembly_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_aclass_summary.tsv",
-        )
-        self.read_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_rclass_summary.tsv",
-        )
-        self.merged_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_mclass_summary.tsv",
-        )
+    @property
+    def media_dir(self) -> str:
+        return os.path.join(ConstantsSettings.media_directory, self.substructure_dir)
+
+    @property
+    def static_dir(self) -> str:
+        return os.path.join(ConstantsSettings.static_directory, self.substructure_dir)
+
+    @property
+    def media_dir_logdir(self) -> str:
+        return os.path.join(self.media_dir, "logs")
+
+    @property
+    def media_dir_classification(self) -> str:
+        return os.path.join(self.media_dir, self.dir_classification)
+
+    @property
+    def static_dir_plots(self) -> str:
+        return os.path.join(self.static_dir, self.dir_plots)
+
+    @property
+    def media_dir_igv(self) -> str:
+        return os.path.join(self.static_dir, self.igv_dir)
+
+    @property
+    def params_file_path(self) -> str:
+        return os.path.join(self.media_dir_classification, f"{self.prefix}_params.csv")
+
+    @property
+    def remap_plan_path(self) -> str:
+        return os.path.join(self.media_dir_classification, f"{self.prefix}_remap_plan.csv")
+
+    @property
+    def full_report(self) -> str:
+        return os.path.join(self.media_dir_classification, f"{self.prefix}_full_report.tsv")
+
+    @property
+    def assembly_classification_summary(self) -> str:
+        return os.path.join(self.media_dir_classification, f"{self.prefix}_aclass_summary.tsv")
+
+    @property
+    def read_classification_summary(self) -> str:
+        return os.path.join(self.media_dir_classification, f"{self.prefix}_rclass_summary.tsv")
+
+    @property
+    def merged_classification_summary(self) -> str:
+        return os.path.join(self.media_dir_classification, f"{self.prefix}_mclass_summary.tsv")
+    
+    @property
+    def raw_classification_missing_accids(self) -> str:
+        return os.path.join(self.media_dir_classification, f"{self.prefix}_raw_missing_accids.tsv")
+    
+    @property
+    def username(self):
+        return self.owner.username
 
     def set_metadata_tool(self):
         self.metadata_tool = RunMetadataHandler(
-            self.username,
+            self.owner,
             self.config,
             sift_query=self.config["sift_query"],
             prefix=self.prefix,
@@ -656,31 +658,6 @@ class RunDetail_main:
         self.sift = config["actions"]["SIFT"]
         self.house_cleaning = config["actions"]["CLEAN"]
 
-        ### output files
-        self.params_file_path = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_params.csv",
-        )
-        self.remap_plan_path = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_remap_plan.csv",
-        )
-        self.full_report = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_full_report.tsv",
-        )
-        self.assembly_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_aclass_summary.tsv",
-        )
-        self.read_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_rclass_summary.tsv",
-        )
-        self.merged_classification_summary = os.path.join(
-            self.media_dir_classification,
-            f"{self.prefix}_mclass_summary.tsv",
-        )
 
     def update_merged_targets(self, targets_list: List[Remap_Target]):
         """
@@ -1002,7 +979,9 @@ class Run_Deployment_Methods(RunDetail_main):
             self.assembly_classification_summary: self.aclass_summary,
             self.read_classification_summary: self.rclass_summary,
             self.merged_classification_summary: self.merged_targets,
+            self.raw_classification_missing_accids: self.metadata_tool.missing_refs_df,
         }
+        
         for output_df_path, df in export_dict.items():
             if df is not None:
                 if not df.empty:

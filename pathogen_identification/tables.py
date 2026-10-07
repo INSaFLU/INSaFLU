@@ -330,7 +330,7 @@ class ProjectTableMetagenomics(ProjectTable):
             project_dir, CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv"
         )
         merge_explify_file_provide = os.path.join(
-            "/media/",
+            settings.MEDIA_URL,
             project_dir_structure,
             CS.EXPLIFY_MERGE_SUFFIX + f".{record.pk}.tsv",
         )
@@ -699,7 +699,8 @@ class SampleTableOne(tables.Table):
     def render_ref_management(self, record: PIProject_Sample):
         nreferences = (
             RawReferenceCompoundModel.objects.filter(sample=record)
-            .distinct("accid")
+            .values("accid")
+            .distinct()
             .count()
         )
         references_management_button = (
@@ -724,15 +725,7 @@ class SampleTableOne(tables.Table):
             run_type=RunMain.RUN_TYPE_PIPELINE,
         ).count()
 
-    def render_running_processes(self, record: PIProject_Sample):
-        """
-        return number of running processes in this project"""
 
-        running = ParameterSet.objects.filter(
-            sample=record, project=record.project, status=ParameterSet.STATUS_RUNNING
-        ).count()
-
-        return running
 
     def render_queued_processes(self, record: PIProject_Sample):
         """
@@ -782,11 +775,26 @@ class SampleTableOne(tables.Table):
             ],
         ).count()
 
+
     def render_processes(self, record):
-        return (
-            f"{self.render_running_processes(record)} / "
-            f"{self.render_queued_processes(record)}"
-        )
+        
+        """
+        Render the running / queued / finished processes for a sample.
+        Prefer precomputed attributes (set by the view) to avoid per-row DB queries.
+        Fall back to DB counting if attributes are not present.
+        """
+        running = getattr(record, "_proc_running", None)
+        if running is None:
+            # Fallback: preserve previous behavior (single-sample DB queries)
+            running = RunMain.objects.filter(sample=record, status=RunMain.STATUS_RUNNING).count()
+            queued = RunMain.objects.filter(sample=record, status=RunMain.STATUS_QUEUED).count()
+            finished = RunMain.objects.filter(sample=record, status=RunMain.STATUS_FINISHED).count()
+        else:
+            queued = getattr(record, "_proc_queued", 0)
+            finished = getattr(record, "_proc_finished", 0)
+
+        # Simple, safe output (numbers only) — no unescaped HTML required
+        return mark_safe(f"{running} / {queued} / {finished}")
 
     def render_finished_processes(self, record):
         """
@@ -1637,7 +1645,10 @@ class RunMappingTable(tables.Table):
             if record.panel is not None:
                 prefix += record.panel.name + " - "
 
-        return f"{prefix}{record.parameter_set.leaf.index}"
+        elif record.run_type == RunMain.RUN_TYPE_CONTROL_MAPPING:
+            prefix = "Control - "
+
+        return f"{prefix}{record.parameter_set.leaf.id_str}"
 
     def render_enrichment(self, record: RunMainWrapper):
         method_name = record.get_pipeline_software(
@@ -1821,19 +1832,8 @@ class RunMainTable(tables.Table):
         return mark_safe(record.runtime)
 
     def render_name(self, record: RunMainWrapper):
-        prefix = ""
 
-        if record.run_type == RunMain.RUN_TYPE_MAP_REQUEST:
-            prefix = "Request - "
-        elif record.run_type == RunMain.RUN_TYPE_COMBINED_MAPPING:
-            prefix = "Combined - "
-
-        elif record.run_type == RunMain.RUN_TYPE_PANEL_MAPPING:
-            prefix = "Panel - "
-            if record.panel is not None:
-                prefix += record.panel.name + " - "
-
-        return f"{prefix}{record.parameter_set.leaf.index}"
+        return f"{record.parameter_set.leaf.id_str}"
 
     def render_enrichment(self, record: RunMainWrapper):
         method_name = record.get_pipeline_software(

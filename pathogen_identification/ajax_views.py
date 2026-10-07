@@ -13,6 +13,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_POST
+from django.db.models.query import QuerySet
 
 from constants.constants import Constants, FileType, TypePath
 from fluwebvirus.settings import BASE_DIR, STATIC_ROOT, STATIC_URL
@@ -58,6 +59,36 @@ def simplify_name(name: str):
         .lower()
     )
 
+
+def get_project_checked_boxes(request, project_pk):
+        
+    try:
+
+        check_box_all_checked = request.POST.get("check_box_all", False)
+        check_boxes = {
+            key: value
+            for key, value in request.session.items()
+            if key.startswith(Constants.CHECK_BOX)
+            and key != Constants.CHECK_BOX_ALL
+            and value is True
+            }
+
+        if check_box_all_checked is True:
+            sample_ids = PIProject_Sample.objects.filter(
+                project__pk = project_pk
+            ).values_list("pk", flat=True)
+        else:
+            sample_ids = []
+            for key, value in check_boxes.items():
+                if value:
+                    sample_id = key.split("_")[-1]
+                    if sample_id.isdigit():
+                        sample_ids.append(int(sample_id))
+    except Exception as e:
+        print("Error in get_project_checked_boxes:", e)
+        sample_ids = []
+
+    return sample_ids
 
 @login_required
 @require_POST
@@ -217,7 +248,7 @@ def deploy_remap(
                     run__run_type__in=[RunMain.RUN_TYPE_MAP_REQUEST],
                     run__sample__pk=sample_id,
                 )
-                .values_list("run__parameter_set__leaf__index", flat=True)
+                .values_list("run__parameter_set__leaf__tree_index", flat=True)
                 .distinct()
             )
 
@@ -238,7 +269,7 @@ def deploy_remap(
                     run__run_type__in=[RunMain.RUN_TYPE_MAP_REQUEST],
                     run__sample__pk=sample_id,
                 )
-                .values_list("run__parameter_set__leaf__index", flat=True)
+                .values_list("run__parameter_set__leaf__tree_index", flat=True)
                 .distinct()
             )
 
@@ -287,7 +318,7 @@ def deploy_remap(
                     for reference_id in reference_id_list:
                         reference = RawReference.objects.get(pk=int(reference_id))
                         if reference.accid in references_mapped_dict:
-                            if leaf.index in references_mapped_dict[reference.accid]:
+                            if leaf.pk in references_mapped_dict[reference.accid]:
                                 deployed_refs[sample][leaf]["not_deployed"].append(
                                     reference.accid
                                 )
@@ -339,11 +370,11 @@ def deploy_remap(
             for sample, leaves_to_deploy in runs_to_deploy.items():
                 for leaf in leaves_to_deploy:
                     if len(deployed_refs[sample][leaf]["deployed"]) > 0:
-                        message += f"Leaf {leaf.index}, deployed references: {', '.join(deployed_refs[sample][leaf]['deployed'])}. "
+                        message += f"Leaf {leaf.tree_index}, deployed references: {', '.join(deployed_refs[sample][leaf]['deployed'])}. "
                         total_runs_deployed += 1
 
                     if len(deployed_refs[sample][leaf]["not_deployed"]) > 0:
-                        message += f"References: {', '.join(deployed_refs[sample][leaf]['not_deployed'])} already mapped for Leaf {leaf.index}. "
+                        message += f"References: {', '.join(deployed_refs[sample][leaf]['not_deployed'])} already mapped for Leaf {leaf.tree_index}. "
 
             if total_runs_deployed == 0:
                 data["is_deployed"] = False
@@ -374,6 +405,105 @@ def submit_sample_mapping_televir(request):
         return JsonResponse(data)
 
     return JsonResponse({"is_ok": False})
+
+def control_references_to_map(project, controls) -> QuerySet[RawReference]:
+    """
+    get references to map
+    """
+    ### References in this project in general
+    references = RawReference.objects.filter(
+        run__project = project,
+    )
+
+    ### already mapped in control (to exclude)
+    references_control_mapped = references.filter(
+        run__sample__in = controls,
+        status__in = [RawReference.STATUS_MAPPED, RawReference.STATUS_MAPPING],
+    ).distinct("accid", "taxid").values_list("taxid", flat=True)
+
+    ### Mapped only in samples
+    references_control_unmapped= references.exclude(
+        run__sample__in = controls,
+    )
+    ### Filter for mapped or mapping and filter out those already mapped in control
+    references_control_unmapped = references_control_unmapped.filter(
+        status__in = [RawReference.STATUS_MAPPED, RawReference.STATUS_MAPPING],
+    ).distinct("accid", "taxid")
+
+    references_control_unmapped = references_control_unmapped.exclude(
+        taxid__in = references_control_mapped,
+    ).distinct("accid", "taxid")
+
+    return references_control_unmapped
+
+@login_required
+@require_POST
+def submit_control_mapping(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        data = {"is_ok": True, "is_deployed": False, "is_empty": False, "message": ""}
+        references = []
+        errors = ""
+
+        try:
+            project_id = int(request.POST["project_id"])
+            project = Projects.objects.get(id=int(project_id))
+            user = request.user
+            process_SGE = ProcessSched()
+
+            if request.user != project.owner:
+                data["is_ok"] = False
+                data["message"] = "User is not the owner of the project"
+                return JsonResponse(data)
+            
+            samples = PIProject_Sample.objects.filter(project__pk=project_id, is_control=True)
+            software_utils = SoftwareTreeUtils(user, project)
+            samples_submitted = 0
+            references = control_references_to_map(project, samples)
+
+            for sample in samples:
+
+                runs_to_deploy, _ = software_utils.check_runs_to_submit_mapping_only(sample)
+
+                if len(runs_to_deploy) == 0:
+                    continue
+                runs_to_deploy = runs_to_deploy.get(sample, [])
+                for leaf in runs_to_deploy:
+                    reference_manager = SampleReferenceManager(sample)
+                    mapping_run = reference_manager.control_mapping_run_from_leaf(
+                        leaf
+                    )
+                    ###############################
+
+                    for reference in references:
+                        reference.pk = None
+                        reference.run = mapping_run
+                        reference.save()
+
+                    taskID = (
+                        process_SGE.set_submit_televir_sample_metagenomics(
+                            user=request.user,
+                            sample_pk=sample.pk,
+                            leaf_pk=leaf.pk,
+                            mapping_request=True,
+                            map_run_pk=mapping_run.pk,
+                        )
+                    )
+                    samples_submitted += 1
+
+        except Exception as e:
+            print(e)
+            import traceback
+            traceback.print_exc()
+            print("error")
+            errors = f" Error deploying control mapping for project {project.name}"
+
+            data["is_ok"] = False
+
+        data["is_deployed"] = samples_submitted > 0
+        data["samples_deployed"] = samples_submitted
+        data["message"] = f"Deployed {samples_submitted} samples -- against {len(references)}. {errors}"
+
+        return JsonResponse(data)
 
 
 @login_required
@@ -470,13 +600,7 @@ def submit_samples_mapping_panels(request):
 
         project_samples = PIProject_Sample.objects.filter(project=project)
 
-        sample_ids = request.POST.getlist("sample_ids[]")
-        check_box_all_checked = request.POST.get("check_box_all_checked", False)
-        if check_box_all_checked:
-            sample_ids = []
-        else:
-            sample_ids = [int(sample_id) for sample_id in sample_ids]
-
+        sample_ids = get_project_checked_boxes(request, project_id)
         if len(sample_ids) > 0:
             project_samples = project_samples.filter(pk__in=sample_ids)
 
@@ -568,8 +692,9 @@ def submit_project_samples_mapping_televir(request):
 
         project_samples = PIProject_Sample.objects.filter(project=project)
 
-        sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
+        sample_ids = get_project_checked_boxes(
+            request, project_id
+        )
 
         if len(sample_ids) > 0:
             project_samples = project_samples.filter(pk__in=sample_ids)
@@ -636,19 +761,17 @@ def deploy_ProjectPI(request):
 
         user_id = int(request.POST["user_id"])
         user = User.objects.get(id=int(user_id))
-
-        samples = PIProject_Sample.objects.filter(
-            project=project, is_deleted_in_file_system=False
+        sample_ids = get_project_checked_boxes(
+            request, project_id
         )
-
-        sample_ids = request.POST.getlist("sample_ids[]")
-        sample_ids = [int(sample_id) for sample_id in sample_ids]
-        check_box_all_checked = request.POST.get("check_box_all_checked", False)
-
-        if check_box_all_checked:
-            samples = samples.filter(is_deleted_in_file_system=False)
-        elif len(sample_ids) > 0:
-            samples = samples.filter(pk__in=sample_ids)
+        if len(sample_ids) == 0:
+            samples = PIProject_Sample.objects.filter(
+                project=project, is_deleted_in_file_system=False
+            )
+        else:
+            samples = PIProject_Sample.objects.filter(
+                project=project, is_deleted_in_file_system=False, pk__in=sample_ids
+            )
 
         software_utils = SoftwareTreeUtils(user, project)
 
@@ -662,11 +785,16 @@ def deploy_ProjectPI(request):
                         PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_REGULAR
                     )
 
+                    from pathogen_identification.models import RunBatch
+                    run_batch = RunBatch.objects.create(project=project)
+                    run_batch.nodes.set([leaf for _, leaves in runs_to_deploy.items() for leaf in leaves])
+                    run_batch.save()
+
                     for sample, _ in runs_to_deploy.items():
 
                         taskID = process_SGE.set_submit_televir_sample(
                             user=user,
-                            project_pk=project.pk,
+                            batch_pk=run_batch.pk,
                             sample_pk=sample.pk,
                             job_name=job_name,
                             vect_job_name_wait=[job_name_wait]
@@ -704,13 +832,14 @@ def deploy_ProjectPI_combined_runs(request):
             project=project, is_deleted_in_file_system=False
         )
 
-        sample_ids = request.POST.getlist("sample_ids[]")
-        check_box_all_checked = request.POST.get("check_box_all_checked", False)
-        if check_box_all_checked:
-            samples = samples.filter(is_deleted_in_file_system=False)
-        elif len(sample_ids) > 0:
-            samples = samples.filter(
-                pk__in=[int(sample_id) for sample_id in sample_ids]
+        sample_ids = get_project_checked_boxes(
+            request, project_id)
+        
+        if len(sample_ids) > 0:
+            samples = samples.filter(pk__in=sample_ids)
+        else:
+            samples = PIProject_Sample.objects.filter(
+                project=project, is_deleted_in_file_system=False
             )
 
         try:
@@ -792,10 +921,15 @@ def submit_televir_project_sample(request):
                     PICS.PROCESS_TYPE_DEPLOYMENT, Constants.PROCESS_REGULAR
                 )
 
+                from pathogen_identification.models import RunBatch
+                run_batch = RunBatch.objects.create(project=project)
+                run_batch.nodes.set([leaf for _, leaves in runs_to_deploy.items() for leaf in leaves])
+                run_batch.save()
+            
                 for sample, _ in runs_to_deploy.items():
                     _ = process_SGE.set_submit_televir_sample(
                         user=request.user,
-                        project_pk=project.pk,
+                        batch_pk=run_batch.pk,
                         sample_pk=sample.pk,
                         job_name = job_name,
                         vect_job_name_wait=[job_name_wait]
@@ -805,7 +939,6 @@ def submit_televir_project_sample(request):
 
         except Exception as e:
             print(e)
-            print("this gave an error")
             data["is_deployed"] = False
         print(data)
         data["is_ok"] = True
@@ -1042,7 +1175,6 @@ def kill_televir_project_sample(request):
             ],
         )
 
-        print(runs_params)
         for single_run_param in runs_params:
             try:  # kill process
 
@@ -1071,8 +1203,7 @@ def kill_televir_project_tree_sample(request):
     """
     kill all processes a sample, set queued to false
     """
-    print("kill_televir_project_tree_sample")
-    print(request.POST)
+
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         data = {"is_ok": False, "is_deployed": False}
 
@@ -1091,8 +1222,6 @@ def kill_televir_project_tree_sample(request):
             ],
         )
         killed = 0
-        print("## runs_params")
-        print(runs_params)
 
         for single_run_param in runs_params:
             try:  # kill process
@@ -1143,18 +1272,15 @@ def kill_televir_project_all_sample(request):
 
         project_id = int(request.POST["project_id"])
         project = Projects.objects.get(id=int(project_id))
-        sample_ids = request.POST.getlist("sample_ids[]")
-        check_box_all_checked = request.POST.get("check_box_all_checked", False)
-
-        if check_box_all_checked:
-            sample_ids = []
+        sample_ids = get_project_checked_boxes(request, project_id)
+        if len(sample_ids) == 0:
+            samples= PIProject_Sample.objects.filter(
+                project=project, is_deleted_in_file_system=False
+            )
         else:
-            sample_ids = [int(sample_id) for sample_id in sample_ids]
-
-        samples = PIProject_Sample.objects.filter(project__id=int(project_id))
-
-        if len(sample_ids) > 0:
-            samples = samples.filter(pk__in=sample_ids)
+            samples = PIProject_Sample.objects.filter(
+                project=project, is_deleted_in_file_system=False, pk__in=sample_ids
+            )
 
         killed = 0
 
@@ -1457,8 +1583,6 @@ def create_teleflu_project(request):
         data = {"is_ok": False, "is_error": False, "exists": False, "is_empty": False}
 
         ref_ids = request.POST.getlist("ref_ids[]")
-        sample_ids = request.POST.getlist("sample_ids[]")
-        check_box_all_checked = request.POST.get("check_box_all_checked", False)
 
         def teleflu_project_name_from_refs(ref_ids):
 
@@ -1484,10 +1608,7 @@ def create_teleflu_project(request):
         first_ref = RawReference.objects.get(pk=int(ref_ids[0]))
 
         project = first_ref.run.project
-        if check_box_all_checked:
-            sample_ids = PIProject_Sample.objects.filter(project=project).values_list(
-                "pk", flat=True
-            )
+        sample_ids = get_project_checked_boxes(request, project.pk)
         date = datetime.now()
 
         try:
@@ -1841,6 +1962,8 @@ def set_teleflu_check_box_values(request):
         return JsonResponse(data)
 
 
+
+
 @login_required
 @require_POST
 def add_teleflu_sample(request):
@@ -1854,16 +1977,12 @@ def add_teleflu_sample(request):
             "not_added": False,
         }
 
-        sample_ids = request.POST.getlist("sample_ids[]")
         ref_id = int(request.POST["teleflu_id"])
-        check_box_all_checked = request.POST.get("check_box_all_checked", False)
 
         teleflu_project = TeleFluProject.objects.get(pk=ref_id)
-        if check_box_all_checked:
-            sample_ids = PIProject_Sample.objects.filter(
-                project=teleflu_project.televir_project
-            ).values_list("pk", flat=True)
-
+        sample_ids = get_project_checked_boxes(
+            request, teleflu_project.televir_project.pk
+        )
         if len(sample_ids) == 0:
             data["is_empty"] = True
             return JsonResponse(data)
@@ -1960,7 +2079,7 @@ def teleflu_node_info(params_df, leaf: SoftwareTreeNode):
 
     node_info = {
         "pk": leaf.pk,
-        "node": f"{leaf.software_tree.global_index}-{leaf.index}",
+        "node": f"{leaf.software_tree.global_index}-{leaf.tree_index}",
         "tree": leaf.software_tree.global_index,
         "modules": [],
     }
@@ -1970,7 +2089,7 @@ def teleflu_node_info(params_df, leaf: SoftwareTreeNode):
         acronym = "".join(acronym).upper()
         params = params_df[params_df.module == pipeline_step].to_dict("records")
         if params:  # if there are parameters for this module
-            software = params[0].get("software")
+            software = params[0].get("software_name", "")
             software = software.split("_")[0]
 
             params = params[0].get("value")
@@ -2012,54 +2131,61 @@ def load_teleflu_workflows(request):
         teleflu_project = TeleFluProject.objects.get(pk=teleflu_project_pk)
         mapping_workflows = []
         existing_mapping_pks = []
+        try:
 
-        for mapping in mappings:
-            if mapping.leaf is None:
-                continue
+            for mapping in mappings:
+                if mapping.leaf is None:
+                    continue
 
-            params_df = utils_manager.get_leaf_parameters(mapping.leaf)
-            node_info = teleflu_node_info(params_df, mapping.leaf)
+                params_df = utils_manager.get_leaf_parameters(mapping.leaf)
+                node_info = teleflu_node_info(params_df, mapping.leaf)
 
-            samples_mapped = mapping.mapped_samples
+                samples_mapped = mapping.mapped_samples
 
-            samples_stacked = mapping.stacked_samples_televir
-            node_info["running_or_queued"] = mapping.queued_or_running_mappings_exist
-            node_info["pk"] = mapping.pk
-            node_info["samples_stacked"] = samples_stacked.count()
-            node_info["samples_to_stack"] = samples_mapped.exclude(
-                pk__in=samples_stacked.values_list("pk", flat=True)
-            ).exists()
+                samples_stacked = mapping.stacked_samples_televir
+                node_info["running_or_queued"] = mapping.queued_or_running_mappings_exist
+                node_info["pk"] = mapping.pk
+                node_info["samples_stacked"] = samples_stacked.count()
+                node_info["samples_to_stack"] = samples_mapped.exclude(
+                    pk__in=samples_stacked.values_list("pk", flat=True)
+                ).exists()
 
-            sample_summary, mapped_samples, mapped_success = mapping.sample_summary
+                sample_summary, mapped_samples, mapped_success = mapping.sample_summary
 
-            mapped_fail = mapped_samples - mapped_success
+                mapped_fail = mapped_samples - mapped_success
 
-            node_info["samples_mapped"] = samples_mapped.count()
-            node_info["mapped_success"] = mapped_success
-            node_info["mapped_fail"] = mapped_fail
-            node_info["left_to_map"] = (
-                teleflu_project.nsamples - mapped_success - mapped_fail
-            ) > 0
+                node_info["samples_mapped"] = samples_mapped.count()
+                node_info["mapped_success"] = mapped_success
+                node_info["mapped_fail"] = mapped_fail
+                node_info["left_to_map"] = (
+                    teleflu_project.nsamples - mapped_success - mapped_fail
+                ) > 0
 
-            node_info["sample_summary"] = sample_summary
-            existing_mapping_pks.append(mapping.leaf.pk)
-            node_info["stacked_html_exists"] = os.path.exists(
-                mapping.mapping_igv_report
-            )
-            node_info["stacked_html"] = mapping.mapping_igv_report.replace(
-                "/insaflu_web/INSaFLU", ""
-            )
+                node_info["sample_summary"] = sample_summary
+                existing_mapping_pks.append(mapping.leaf.pk)
+                node_info["stacked_html_exists"] = os.path.exists(
+                    mapping.mapping_igv_report
+                )
+                node_info["stacked_html"] = mapping.mapping_igv_report.replace(
+                    "/insaflu_web/INSaFLU", ""
+                )
 
-            node_info["stacked_variants_vcf"] = mapping.variants_vcf_media_path
+                node_info["stacked_variants_vcf"] = mapping.variants_vcf_media_path
 
-            mapping_workflows.append(node_info)
+                mapping_workflows.append(node_info)
 
-        data["mapping_workflows"] = mapping_workflows
-        data["is_ok"] = True
-        data["teleflu_project_pk"] = teleflu_project_pk
-        data["project_nsamples"] = teleflu_project.nsamples
+            data["mapping_workflows"] = mapping_workflows
+            data["is_ok"] = True
+            data["teleflu_project_pk"] = teleflu_project_pk
+            data["project_nsamples"] = teleflu_project.nsamples
 
-        return JsonResponse(data)
+            return JsonResponse(data)
+        except Exception as e:
+            print(e)
+            import traceback
+            traceback.print_exc()
+            data["is_ok"] = False 
+
 
     return JsonResponse(data)
 

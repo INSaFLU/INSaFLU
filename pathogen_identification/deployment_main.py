@@ -19,7 +19,7 @@ from pathogen_identification.modules.object_classes import Remap_Target
 from pathogen_identification.modules.run_main import RunMainTree_class
 from pathogen_identification.utilities.televir_parameters import \
     TelevirParameters
-from pathogen_identification.utilities.update_DBs import (
+from pathogen_identification.utilities.update_DBs_tree import (
     Update_Assembly, Update_Classification, Update_Metagenomics, Update_Remap,
     Update_RunMain_Initial, Update_RunMain_Secondary, get_run_parents)
 from pathogen_identification.utilities.utilities_general import \
@@ -63,10 +63,6 @@ class PathogenIdentificationDeploymentCore:
             self.file_r2 = sample.sample.get_fastq_available(TypePath.MEDIA_ROOT, False)
         else:
             self.file_r2 = ""
-
-    @property
-    def username(self):
-        return self.sample.project.owner.username
 
     @property
     def user(self):
@@ -369,7 +365,7 @@ class Run_Main_from_Leaf:
         self.pipeline_leaf = pipeline_leaf
         self.pipeline_tree = pipeline_tree
         ########################################
-        prefix = f"{simplify_name_lower(input_data.name)}_run{pipeline_leaf.index}"
+        prefix = f"{simplify_name_lower(input_data.name)}_r{pipeline_leaf.id_str}"
         self.date_submitted = datetime.datetime.now()
 
         self.technology = input_data.sample.get_type_technology()
@@ -467,27 +463,36 @@ class Run_Main_from_Leaf:
             return False
 
         self.container.run_main_prep_dump_tables()
+        if self.run_pk is not None:
+            self.container.run_engine.run_pk = self.run_pk
+
+        if (
+            self.container.run_engine.run_type
+            == RunMainTree_class.RUN_TYPE_SCREENING
+        ):
+            self.container.run_engine.remap_params.manual_references_include = True
 
         try:
 
-            if self.run_pk is not None:
-                self.container.run_engine.run_pk = self.run_pk
 
-            if (
-                self.container.run_engine.run_type
-                == RunMainTree_class.RUN_TYPE_SCREENING
-            ):
-                self.container.run_engine.remap_params.manual_references_include = True
+
+
 
             if self.mapping_request:
                 self.container.run_engine.run_type = (
                     RunMainTree_class.RUN_TYPE_MAPPING_REQUEST
                 )
-
-                self.container.run_engine.metadata_tool.get_mapping_references(
-                    self.run_pk,
-                    max_accids=self.container.run_engine.remap_params.max_accids,
-                )
+                if (
+                    self.container.run_engine.run_type
+                    == RunMainTree_class.RUN_TYPE_COMBINED_MAPPING
+                ):
+                    self.container.run_engine.metadata_tool.get_mapping_references(
+                        self.run_pk,
+                        max_accids=self.container.run_engine.remap_params.max_accids,
+                    )
+                else:
+                    self.container.run_engine.metadata_tool.get_mapping_references(
+                        self.run_pk)
 
             if self.combined_analysis:
                 self.container.run_engine.run_type = (

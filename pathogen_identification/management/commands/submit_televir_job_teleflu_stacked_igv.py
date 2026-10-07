@@ -77,7 +77,7 @@ class Command(BaseCommand):
         try:
             create_televir_igv_report(
                 teleflu_project_pk=teleflu_project.pk,
-                leaf_index=teleflu_mapping.leaf.index,
+                leaf_pk=teleflu_mapping.leaf.pk,
             )
 
         except Exception as e:

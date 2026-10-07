@@ -39,6 +39,8 @@ from settings.constants_settings import ConstantsSettings
 from settings.models import Parameter, Software
 
 
+
+
 class QCSoftware:
     """
     Class to manage QC software
@@ -310,6 +312,23 @@ class SampleReadsRetrieve:
                         qc_multiple.add_software(software_qc)
                     psample.software_qc = qc_multiple
 
+                if ConstantsSettings.PIPELINE_NAME_validation_qc in params_df.index:
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_validation_qc} + {psample.process_type}"
+                    psample.qc = True
+
+                    qc_block = params_df.loc[
+                        params_df.index == ConstantsSettings.PIPELINE_NAME_validation_qc
+                    ]
+
+                    psample.qc = True
+                    qc_multiple = MultipleQCSoftware([])
+                    for row in qc_block.iterrows():
+                        qc_software = row[1]["software_name"]
+                        qc_parameters = row[1]["value"]
+                        software_qc = QCSoftware(qc_software, qc_parameters)
+                        qc_multiple.add_software(software_qc)
+                    psample.software_qc = qc_multiple
+
                 if os.path.exists(run.depleted_reads_r2):
                     psample.processed_path_r2 = run.depleted_reads_r2
 
@@ -352,6 +371,23 @@ class SampleReadsRetrieve:
                         qc_multiple.add_software(software_qc)
                     psample.software_qc = qc_multiple
 
+                if ConstantsSettings.PIPELINE_NAME_validation_qc in params_df.index:
+                    psample.process_type = f"{ConstantsSettings.PIPELINE_NAME_validation_qc} + {psample.process_type}"
+                    psample.qc = True
+
+                    qc_block = params_df.loc[
+                        params_df.index == ConstantsSettings.PIPELINE_NAME_validation_qc
+                    ]
+
+                    psample.qc = True
+                    qc_multiple = MultipleQCSoftware([])
+                    for row in qc_block.iterrows():
+                        qc_software = row[1]["software_name"]
+                        qc_parameters = row[1]["value"]
+                        software_qc = QCSoftware(qc_software, qc_parameters)
+                        qc_multiple.add_software(software_qc)
+                    psample.software_qc = qc_multiple
+
                 psample.processed_path_r1 = run.enriched_reads_r1
                 if os.path.exists(run.enriched_reads_r2):
                     psample.processed_path_r2 = run.enriched_reads_r2
@@ -371,6 +407,34 @@ class SampleReadsRetrieve:
 
                 psample.qc = True
                 psample.process_type = ConstantsSettings.PIPELINE_NAME_extra_qc
+                qc_multiple = MultipleQCSoftware([])
+                for row in qc_block.iterrows():
+                    qc_software = row[1]["software_name"]
+                    qc_parameters = row[1]["value"]
+                    software_qc = QCSoftware(qc_software, qc_parameters)
+                    qc_multiple.add_software(software_qc)
+                psample.software_qc = qc_multiple
+
+                psample.processed_path_r1 = run.qc_reads_r1
+                if os.path.exists(run.qc_reads_r2):
+                    psample.processed_path_r2 = run.qc_reads_r2
+                processed_samples.append(psample)
+
+
+            elif ConstantsSettings.PIPELINE_NAME_validation_qc in params_df.index:
+                if os.path.exists(run.qc_reads_r1) is False:
+                    continue
+
+                psample = ProcessedSample(
+                    sample=run.run.parameter_set.sample,
+                )
+
+                qc_block = params_df.loc[
+                    params_df.index == ConstantsSettings.PIPELINE_NAME_validation_qc
+                ]
+
+                psample.qc = True
+                psample.process_type = ConstantsSettings.PIPELINE_NAME_validation_qc
                 qc_multiple = MultipleQCSoftware([])
                 for row in qc_block.iterrows():
                     qc_software = row[1]["software_name"]
@@ -423,6 +487,8 @@ class SampleReferenceManager:
             self.proxy_leaf_prepare()
         )
         self.prep_storage()
+    
+
 
     def add_reference(self, reference: ReferenceSourceFileMap):
         ref_description = reference.description
@@ -493,7 +559,7 @@ class SampleReferenceManager:
 
         except SoftwareTreeNode.DoesNotExist:
             software_tree_node = SoftwareTreeNode.objects.create(
-                index=-1,
+                tree_index=-1,
                 software_tree=self.software_tree,
                 name="storage",
                 parent=None,
@@ -654,6 +720,10 @@ class SampleReferenceManager:
 
         return mapping_run
 
+    def control_mapping_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
+        """ """
+        return self.create_mapping_run(leaf, RunMain.RUN_TYPE_CONTROL_MAPPING)
+
     def mapping_run_from_leaf(self, leaf: SoftwareTreeNode) -> RunMain:
         """ """
         return self.create_mapping_run(leaf, RunMain.RUN_TYPE_COMBINED_MAPPING)
@@ -679,7 +749,7 @@ class RunMainWrapper:
 
     def __init__(self, run: RunMain):
 
-        self.name = f"run {run.parameter_set.leaf.index}"
+        self.name = f"run {run.parameter_set.leaf.id_str}"
 
         self.record = run
         self.user = run.project.owner
@@ -901,6 +971,8 @@ class FinalReportWrapper:
                     raise e
 
         self.private_reads = 0
+        self.run_index = report.run.pk if report.run else None
+        self.data_exists = False
         self.control_flag = report.control_flag
         self.control_flag_str = report.control_flag_str
         self.first_in_group = False
@@ -985,7 +1057,7 @@ class FinalReportCompound:
 
         for ref in references_found_in:
 
-            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}-{ref.run.parameter_set.leaf.index}"
+            index_string = f"{ref.run.parameter_set.leaf.software_tree.global_index}-{ref.run.parameter_set.leaf.id_str}"
 
             if ref.run.run_type in [
                 RunMain.RUN_TYPE_MAP_REQUEST,
@@ -1170,7 +1242,7 @@ def set_control_reports(project_pk: int):
         )
 
         control_compound_raw_references = RawReferenceCompoundModel.objects.filter(
-            run__sample__in=control_samples
+            sample__in=control_samples
         )
 
         control_unmapped = control_compound_raw_references.filter(
@@ -1218,7 +1290,8 @@ def set_control_reports(project_pk: int):
             report.save()
 
     except Exception as e:
-        print(e)
+        import traceback
+        traceback.print_exc()   
         pass
 
 
@@ -1265,7 +1338,7 @@ class ReportList:
         return self.reports[index]
 
 
-    def set_private_reads(self, report_group: ReportGroup):
+    def fetch_report_data(self, report_group: ReportGroup):
         """
         Set private reads for each report.
         """
@@ -1275,6 +1348,7 @@ class ReportList:
                 report_group = report_group
             )
             report.private_reads = report_data.private_reads
+            report.data_exists = report_data.data_exists
 
         return self
     
@@ -1433,7 +1507,6 @@ class ReportSorter:
         return self.analysis_empty == False
 
     def build_tree(self):
-        print(self.reports_available)
         if self.reports_available:
             self.overlap_manager.build_tree()
 
@@ -1782,7 +1855,6 @@ class ReportSorter:
         clade_heatmap_json = self.clade_heatmap_json(
             to_keep=[report_group.name for report_group in sorted_reports]
         )
-        print(sorted_reports)
         #########
         private_reads_available = False
         for group in sorted_reports:
@@ -1852,7 +1924,7 @@ class ReportSorter:
                     )
                     report_data.save()
 
-                    for run in report.found_in: # compouns report
+                    for run in report.found_in: # compound report
                         report_data.found_in.add(run)
                         report_aggregate.runs.add(run)
 
@@ -2399,7 +2471,7 @@ class RawReferenceCompound:
 
     @property
     def runs_str(self):
-        return ", ".join([str(r.parameter_set.leaf.index) for r in self.runs])
+        return ", ".join([str(r.parameter_set.leaf.id_str) for r in self.runs])
 
 
 class RawReferenceUtils:

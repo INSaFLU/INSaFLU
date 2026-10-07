@@ -169,4 +169,3 @@ def windows_safe(windows_covered):
         return windows_covered
     else:
         return "not calculated"
-        return "not calculated"

@@ -189,7 +189,7 @@ class TestStrategyComparison:
         """Verify binary strategy is called when specified."""
         mock_binary.return_value = {}
         
-        wrapper = EntrezWrapper(outdir="/tmp", email="test@test.com")
+        wrapper = EntrezWrapper(self.user, outdir="/tmp", email="test@test.com")
         wrapper.fetch_lineages(["1", "2", "3"], strategy="binary")
         
         mock_binary.assert_called_once()

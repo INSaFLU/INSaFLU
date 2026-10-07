@@ -126,7 +126,7 @@ class Command(BaseCommand):
         utils = Utils_Manager()
 
         
-        pipeline_tree_index = matched_path_node.software_tree.pk #local_tree.software_tree_pk
+        pipeline_tree_index = matched_path_node.software_tree.pk #
         pipeline_tree_query = SoftwareTree.objects.get(pk=pipeline_tree_index)
 
         ### MANAGEMENT

@@ -67,7 +67,8 @@ class RunEngine:
         self.sample_name = config["sample_name"]
         self.type = config["type"]
         self.project_name = project.name
-        self.username = project.owner.username
+
+        self.user_name = project.owner.username
         self.prefix = "none"
         self.config = config
         self.taxid = config["taxid"]
@@ -143,7 +144,7 @@ class RunEngine:
             self.r2,
             self.sample_name,
             self.project_name,
-            self.username,
+            self.user_name,
             self.config["technology"],
             self.type,
             0,
@@ -166,7 +167,7 @@ class RunEngine:
         ### metadata
         remap_params = TelevirParameters.get_remap_software(self.project_pk)
         self.metadata_tool = RunMetadataHandler(
-            self.username,
+            self.user_name,
             self.config,
             sift_query=config["sift_query"],
             prefix=self.prefix,

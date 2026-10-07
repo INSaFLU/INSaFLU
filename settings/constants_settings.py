@@ -29,6 +29,8 @@ class ConstantsSettings(object):
     PIPELINE_NAME_intra_host_minor_variant_detection = (
         "Intra-host minor variant detection"
     )
+    PIPELINE_NAME_validation_qc = "Validation QC"
+    PIPELINE_NAME_validation_depletion = "Validation depletion"
     PIPELINE_NAME_extra_qc = "Extra QC"
     PIPELINE_NAME_viral_enrichment = "Viral enrichment"
     PIPELINE_NAME_enrichment = "Enrichment"
@@ -57,6 +59,8 @@ class ConstantsSettings(object):
         PIPELINE_NAME_assembly,
         PIPELINE_NAME_contig_classification,
         PIPELINE_NAME_read_classification,
+        PIPELINE_NAME_validation_qc,
+        PIPELINE_NAME_validation_depletion,
         PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_remapping,
         PIPELINE_NAME_remap_filtering,
@@ -77,18 +81,16 @@ class ConstantsSettings(object):
     ]
 
     vect_pipeline_televir_mapping_only = [
-        PIPELINE_NAME_extra_qc,
-        PIPELINE_NAME_viral_enrichment,
-        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_validation_qc,
+        PIPELINE_NAME_validation_depletion,
         PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_reporting,
     ]
 
     vect_pipeline_televir_screening = [
-        PIPELINE_NAME_extra_qc,
-        PIPELINE_NAME_viral_enrichment,
-        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_validation_qc,
+        PIPELINE_NAME_validation_depletion,
         PIPELINE_NAME_map_filtering,
         PIPELINE_NAME_metagenomics_screening,
     ]
@@ -98,14 +100,15 @@ class ConstantsSettings(object):
     )
 
     vect_pipeline_televir_workflows_display = [
-        PIPELINE_NAME_extra_qc,
-        PIPELINE_NAME_viral_enrichment,
-        PIPELINE_NAME_host_depletion,
+        PIPELINE_NAME_validation_qc,
+        PIPELINE_NAME_validation_depletion,
         PIPELINE_NAME_request_mapping,
         PIPELINE_NAME_map_filtering,
     ]
 
     vect_short_acronyms = {
+        PIPELINE_NAME_validation_qc: "VQC",
+        PIPELINE_NAME_validation_depletion: "VDP",
         PIPELINE_NAME_read_quality_analysis: "RQA",
         PIPELINE_NAME_type_and_subtype_analysis: "TSA",
         PIPELINE_NAME_variant_detection: "VD",
@@ -159,6 +162,20 @@ class ConstantsSettings(object):
         TECHNOLOGY_generic,
         TECHNOLOGY_Undefined,
     ]
+
+    @staticmethod
+    def match_pipeline_type(pipeline_name):
+        """
+        Translate pipeline step names - use to combine steps."""
+
+        if pipeline_name in ConstantsSettings.vect_pipeline_televir_classic:
+            return ConstantsSettings.vect_pipeline_televir_classic
+        elif pipeline_name in ConstantsSettings.vect_pipeline_televir_mapping_only:
+            return ConstantsSettings.vect_pipeline_televir_mapping_only
+        elif pipeline_name in ConstantsSettings.vect_pipeline_televir_screening:
+            return ConstantsSettings.vect_pipeline_televir_screening
+        else:
+            return [pipeline_name]  
 
     @staticmethod
     def reverse_set_dict(dict: Dict[str, str]):

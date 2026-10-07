@@ -1273,18 +1273,12 @@ class DefaultParameters(object):
                 software.technology.name,
             )
 
-        elif software.name == SoftwareNames.SOFTWARE_BAMUTIL_name:
-            return self.get_bamutil_defaults(
-                software.owner,
-                Software.TYPE_OF_USE_televir_global,
-                software.technology.name,
-            )
-
         elif software.name == SoftwareNames.SOFTWARE_DUSTMASKER_name:
             return self.get_dustmasker_defaults(
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
+                pipeline_step=software.pipeline_step.name
             )
 
         elif software.name == SoftwareNames.SOFTWARE_MSAMTOOLS_name:
@@ -1292,6 +1286,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
+                pipeline_step=software.pipeline_step.name
             )
         
         elif software.name == SoftwareNames.SOFTWARE_GATK4_name:
@@ -1306,6 +1301,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 software.technology.name,
+                pipeline_step=software.pipeline_step.name,
             )
 
         elif software.name == SoftwareNames.SOFTWARE_BWA_FILTER_name:
@@ -1330,6 +1326,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name
             )
 
         elif software.name == SoftwareNames.SOFTWARE_METAPHLAN_NAME:
@@ -1351,6 +1348,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name
             )
         elif software.name == SoftwareNames.SOFTWARE_KRAKENUNIQ_name:
             return self.get_krakenuniq_default(
@@ -1415,6 +1413,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name
             )
 
         elif software.name == SoftwareNames.SOFTWARE_BOWTIE2_REMAP_name:
@@ -1422,6 +1421,7 @@ class DefaultParameters(object):
                 software.owner,
                 Software.TYPE_OF_USE_televir_global,
                 ConstantsSettings.TECHNOLOGY_illumina,
+                pipeline_step=software.pipeline_step.name
             )
 
         elif software.name == SoftwareNames.SOFTWARE_VOYAGER_name:
@@ -2345,6 +2345,8 @@ class DefaultParameters(object):
             max number of taxids to map against.
             max number of acccids to map for each taxid.
             minimum coverage?
+        
+        DEPRECATED: this software is not used anymore in the pipeline, but it is kept here for historical reasons.
         """
         software = Software()
         software.name = SoftwareNames.SOFTWARE_BAMUTIL_name
@@ -2740,15 +2742,24 @@ class DefaultParameters(object):
         return vect_parameters
 
     def get_prinseq_defaults(
-        self, user, type_of_use, technology_name, sample=None, is_to_run=False
+        self, user, type_of_use, technology_name, sample=None, is_to_run=False, pipeline_step=None
     ):
         """
         -lc_entropy <float>  Filter on a minimum entropy score. Range: [0.0:1.0].
         -lc_dust <float>     Filter on a maximum DUST score. Range: [0.0:1.0].
         """
+
+        if pipeline_step == None:
+            pipeline_step = ConstantsSettings.PIPELINE_NAME_extra_qc
+
         software = Software()
         software.name = SoftwareNames.SOFTWARE_PRINSEQ_name
-        software.name_extended = SoftwareNames.SOFTWARE_PRINSEQ_name_extended
+
+        if pipeline_step == ConstantsSettings.PIPELINE_NAME_extra_qc:
+            software.name_extended = SoftwareNames.SOFTWARE_PRINSEQ_name_extended
+        elif pipeline_step == ConstantsSettings.PIPELINE_NAME_validation_qc:
+            software.name_extended = SoftwareNames.SOFTWARE_PRINSEQ_VALIDATION_name_extended
+        
         software.version = SoftwareNames.SOFTWARE_PRINSEQ_VERSION
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_INSAFLU_PARAMETER
@@ -2768,7 +2779,7 @@ class DefaultParameters(object):
 
         ###  which part of pipeline is going to run
         software.pipeline_step = self._get_pipeline(
-            ConstantsSettings.PIPELINE_NAME_extra_qc
+            pipeline_step
         )
         software.owner = user
 
@@ -2816,8 +2827,14 @@ class DefaultParameters(object):
             pipeline_step = ConstantsSettings.PIPELINE_NAME_extra_qc
 
         software = Software()
+
         software.name = SoftwareNames.SOFTWARE_BWA_FILTER_name
-        software.name_extended = SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
+        
+        if pipeline_step == ConstantsSettings.PIPELINE_NAME_extra_qc:
+            software.name_extended = SoftwareNames.SOFTWARE_BWA_FILTER_name_extended
+        elif pipeline_step == ConstantsSettings.PIPELINE_NAME_validation_qc:
+            software.name_extended = SoftwareNames.SOFTWARE_BWA_VALIDATION_name_extended
+
         software.type_of_use = type_of_use
         software.type_of_software = Software.TYPE_SOFTWARE
         software.version = SoftwareNames.SOFTWARE_BWA_VERSION
@@ -3697,7 +3714,7 @@ class DefaultParameters(object):
         type_of_use,
         technology_name,
         sample=None,
-        pipeline_step="",
+        pipeline_step=None,
         job="confirmatory",
     ):
         if not pipeline_step:

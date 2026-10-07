@@ -203,9 +203,7 @@ $('#checkBoxAll').on('change', function () {
 $(document).ready(function () {
 
     sessionStorage.removeItem('checkedRows');
-
     var checkedRows = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
-
     checkedRows.forEach(function (sample_id) {
         $('.select_sample-checkbox[sample_id="' + sample_id + '"]').prop('checked', true);
     }
@@ -233,7 +231,6 @@ $(".kill-runs").click(function (e) {
 $("#deploypi_mapping_btn").click(function (e) {
 
     // get checked samples rows
-    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
     var remember = document.getElementById('checkBoxAll');
 
     $.ajax({
@@ -244,7 +241,6 @@ $("#deploypi_mapping_btn").click(function (e) {
             'id': $(this).attr('id'),
             'user_id': $('#deploypi_btn').attr('user-id'),
             'project_id': $('#teleflu_create-button').attr("ref_index"),
-            'sample_ids': checkedRows_samples,
             'check_box_all': remember.checked,
         },
         data_type: 'json',
@@ -263,13 +259,14 @@ $("#deploypi_mapping_btn").click(function (e) {
     });
 });
 
+
+
 $("#deploypi_added_mapping_btn").click(function (e) {
     var user_id = $('#deploypi_btn').attr('user-id');
     var project_id = $('#deploypi_btn').attr('project-id');
     csrf_token = $('#teleflu_create-button').attr("csrf");
 
     // get checked samples rows
-    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
     var remember = document.getElementById('checkBoxAll');    
     $.ajax({
         url: $('#deploypi_added_mapping_btn').attr("deploy-url"),
@@ -279,7 +276,6 @@ $("#deploypi_added_mapping_btn").click(function (e) {
             'id': $(this).attr('id'),
             'user_id': user_id,
             'project_id': project_id,
-            'sample_ids': checkedRows_samples,
             'check_box_all': remember.checked,
         },
         data_type: 'json',
@@ -297,6 +293,37 @@ $("#deploypi_added_mapping_btn").click(function (e) {
     });
 });
 
+$("#deploypi_controls_btn").click(function (e) {
+    var user_id = $('#deploypi_btn').attr('user-id');
+    var project_id = $('#deploypi_btn').attr('project-id');
+    csrf_token = $('#teleflu_create-button').attr("csrf");
+    var url = $('#deploypi_controls_btn').attr("deploy-url");
+
+    // get checked samples rows    
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: {
+            'csrfmiddlewaretoken': csrf_token,
+            'id': $(this).attr('id'),
+            'user_id': user_id,
+            'project_id': project_id,
+        },
+        data_type: 'json',
+        success: function (data) {
+
+            if (data["is_ok"] == true && data["is_deployed"] == false) {
+                alert(data["message"]);
+            }
+            else if (data["is_ok"] == true && data["is_deployed"] == true) {                
+                alert(data["message"]);
+            }
+            $.unblockUI();
+        }
+
+    });
+});
+
 
 $("#deploypi_panels_btn").click(function (e) {
     var user_id = $('#deploypi_btn').attr('user-id');
@@ -304,7 +331,6 @@ $("#deploypi_panels_btn").click(function (e) {
     csrf_token = $('#teleflu_create-button').attr("csrf");
 
     // get checked samples rows
-    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
     var remember = document.getElementById('checkBoxAll');
     
     $.ajax({
@@ -315,11 +341,11 @@ $("#deploypi_panels_btn").click(function (e) {
             'id': $(this).attr('id'),
             'user_id': user_id,
             'project_id': project_id,
-            'sample_ids': checkedRows_samples,
             'check_box_all': remember.checked,
         },
         data_type: 'json',
         success: function (data) {
+
             if (data["is_ok"] == true && data["is_deployed"] == false) {
                 alert(data["message"]);
             }
@@ -341,7 +367,6 @@ $("#deploypi_btn").click(function (e) {
     csrf_token = $('#teleflu_create-button').attr("csrf");
 
     // get checked samples rows
-    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
     var remember = document.getElementById('checkBoxAll');
 
     $.ajax({
@@ -352,7 +377,6 @@ $("#deploypi_btn").click(function (e) {
             'id': $(this).attr('id'),
             'user_id': user_id,
             'project_id': project_id,
-            'sample_ids': checkedRows_samples,
             'check_box_all': remember.checked,
         },
         data_type: 'json',

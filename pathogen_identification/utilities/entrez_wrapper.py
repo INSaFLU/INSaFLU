@@ -2,11 +2,10 @@ import http.client
 import os
 import urllib.error
 from abc import ABC, abstractmethod
-from typing import List, Dict, Tuple, TYPE_CHECKING
+from typing import List, Dict, TYPE_CHECKING
 from Bio import Entrez
 from django.contrib.auth.models import User
 from dataclasses import dataclass
-from typing import Optional
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -327,7 +326,7 @@ class EntrezWrapper:
 
     def __init__(
         self,
-        username: str,
+        user: User,
         bindir: str,
         outdir: str,
         outfile: str,
@@ -338,8 +337,7 @@ class EntrezWrapper:
         self.bindir = bindir
         self.outfile = outfile
         self.outdir = outdir
-
-        user = User.objects.get(username=username)
+        self.user = user
 
         Entrez.email = user.email
         Entrez.max_tries = 1

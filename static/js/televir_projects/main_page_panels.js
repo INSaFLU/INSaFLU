@@ -95,9 +95,13 @@ var load_panels_main = function(load_url, user_id, target, load = false, suggest
   $(".request-add-teleflu-sample").on("click", function () {
     var teleflu_id = $(this).attr('teleflu-id');
     $("#id-add-teleflu-sample-button").attr('teleflu-id', teleflu_id);
-    
-    var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
-    var remember = document.getElementById('checkBoxAll');
+
+    var checkedRows_samples = [];
+    $('.select_sample-checkbox:checked').each(function () {
+        // collect ids of checked rows
+        var sample_id = $(this).attr('sample_id');
+        checkedRows_samples.push(sample_id);
+    });
 
     // change text
     if (checkedRows_samples.length == 0) {
@@ -113,18 +117,11 @@ var load_panels_main = function(load_url, user_id, target, load = false, suggest
       var url = $('#id-modal-body-add-teleflu-sample').attr('add-teleflu-single-value-url');
       var csrf = $('#teleflu_create-button').attr('csrf');
 
-      // get checked samples rows
-    
-      var checkedRows_samples = JSON.parse(sessionStorage.getItem('checkedRows')) || [];
-      var remember = document.getElementById('checkBoxAll');
-
       $.ajax({
           url: url,
           type: 'POST',
           data: {
               'teleflu_id': teleflu_id,
-              'sample_ids': checkedRows_samples,
-              'check_box_all': remember.checked,
               'csrfmiddlewaretoken': csrf
           },
           success: function (data) {
@@ -135,6 +132,7 @@ var load_panels_main = function(load_url, user_id, target, load = false, suggest
               } else {
                   alert('Samples added.');
                   location.reload();
+                  
               }
           }
       });

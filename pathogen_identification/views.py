@@ -14,7 +14,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import (FileResponse, Http404, HttpResponse,
                          HttpResponseNotFound, HttpResponseRedirect,
                          JsonResponse)
@@ -442,6 +442,8 @@ class PathId_ProjectsView(BaseBreadcrumbMixin, LoginRequiredMixin, ListView):
                 Q(name__icontains=self.request.GET.get(tag_search))
                 | Q(project_samples__name__icontains=query_string)
             ).distinct()
+        
+
 
         table = ProjectTable(query_set)
 
@@ -946,6 +948,26 @@ class MainPage(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
             query_string = process_query_string(self.request.GET.get(tag_search))
             query_set = query_set.filter(Q(name__icontains=query_string)).distinct()
 
+        # Precompute per-sample running/queued/finished run counts to avoid N+1 queries
+        run_counts_qs = (
+            RunMain.objects.filter(sample__in=query_set)
+            .values("sample")
+            .annotate(
+                running=Count("pk", filter=Q(status=RunMain.STATUS_RUNNING)),
+                queued=Count("pk", filter=Q(status=RunMain.STATUS_QUEUED)),
+                finished=Count("pk", filter=Q(status=RunMain.STATUS_FINISHED)),
+            )
+        )
+        
+        run_map = {item["sample"]: item for item in run_counts_qs}
+        # Attach precomputed counts onto each sample object used by the table renderer
+        for s in query_set:
+            counts = run_map.get(s.pk, {})
+            s._proc_running = counts.get("running", 0)
+            s._proc_queued = counts.get("queued", 0)
+            s._proc_finished = counts.get("finished", 0)
+
+
         samples = SampleTableOne(query_set)
 
         ### set the check_box
@@ -1235,7 +1257,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
         self.kwargs["teleflu_project_name"] = (
             f"Focus: {teleflu_mapping.teleflu_project.raw_reference.description_first}"
         )
-        self.kwargs["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.index}"
+        self.kwargs["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.id_str}"
 
     def get_context_data(self, **kwargs):
         context = super(TelefluMappingIGV, self).get_context_data(**kwargs)
@@ -1284,7 +1306,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
 
         for sample in televir_project_samples:
             ref_select = filter_reference_maps_select(
-                sample, teleflu_mapping.leaf.index, accid_list_simple
+                sample, teleflu_mapping.leaf.pk, accid_list_simple
             )
             if ref_select is None:
                 continue
@@ -1320,7 +1342,7 @@ class TelefluMappingIGV(BaseBreadcrumbMixin, LoginRequiredMixin, generic.Templat
         context["teleflu_project_name"] = (
             f"Focus: {teleflu_project.raw_reference.description_first}"
         )
-        context["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.index}"
+        context["mapping_id"] = f"IGV Mapping Workflow {teleflu_mapping.leaf.id_str}"
 
         return context
 
@@ -1361,7 +1383,7 @@ def get_mapping_bams_zip(request, pk):
 
     for sample in televir_project_samples:
         ref_select = filter_reference_maps_select(
-            sample, teleflu_mapping.leaf.index, accid_list_simple
+            sample, teleflu_mapping.leaf.pk, accid_list_simple
         )
         if ref_select is None:
             continue
@@ -1551,7 +1573,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
                 run_type__in=[
                     RunMain.RUN_TYPE_PIPELINE,
                 ],
-            ).order_by("-parameter_set__leaf__index")
+            ).order_by("-parameter_set__leaf__tree_index")
 
             run_mapping = RunMain.objects.filter(
                 sample__pk=sample_pk,
@@ -1567,6 +1589,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
                     RunMain.RUN_TYPE_MAP_REQUEST,
                     RunMain.RUN_TYPE_COMBINED_MAPPING,
                     RunMain.RUN_TYPE_PANEL_MAPPING,
+                    RunMain.RUN_TYPE_CONTROL_MAPPING
                 ],
                 status__in=[
                     RunMain.STATUS_DEFAULT,
@@ -1588,6 +1611,7 @@ class Sample_main(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView):
             sample_name = "sample"
             project_name = "project"
 
+        print(runs)
         wrapped_runs = [RunMainWrapper(run) for run in runs]
         runs_table = RunMainTable(
             wrapped_runs, exclude=("created", "nmapped", "mapping")
@@ -2662,7 +2686,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
 
         self.kwargs["sample_name"] = sample.sample.name
         self.kwargs["project_name"] = sample.project.name
-        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.index
+        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.id_str
 
     def get_context_data(self, **kwargs):
         project_pk = int(self.kwargs["pk1"])
@@ -2709,11 +2733,11 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             messages.error(self.request, "Run parameters do not exist")
             raise Http404
         
-        if run_main_pipeline.parameter_set.leaf.index is None:
+        if run_main_pipeline.parameter_set.leaf.tree_index is None:
             messages.error(self.request, "Run parameters do not exist")
             raise Http404
 
-        run_name = run_main_pipeline.parameter_set.leaf.index
+        run_name = run_main_pipeline.parameter_set.leaf.id_str
         sample_main = run_main_pipeline.sample
         #
         is_classification = run_main_pipeline.run_type == RunMain.RUN_TYPE_PIPELINE
@@ -2787,7 +2811,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
         )
 
         sorted_reports = {
-            report_group: ReportList(list(report_group.reports.all())).set_private_reads(report_group).sort_group_by_private_reads()
+            report_group: ReportList(list(report_group.reports.all())).fetch_report_data(report_group).sort_group_by_private_reads()
             for report_group in report_groups
         }
 
@@ -2876,6 +2900,7 @@ class Sample_detail(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView)
             "in_control": True,  # has_controlled_flag,
             "report_list": sorted_reports,
             "data_exists": True if not run_main_pipeline.data_deleted else False,
+            "missing_references": run_remap.missing_log_exists,
             "excluded_exist": excluded_reports_exist,
             "empty_reports": empty_reports,
             "error_rate_available": latest_report_aggregate.error_rate_available,
@@ -3016,10 +3041,8 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
             )
         clade_heatmap_json = json.dumps(latest_report_aggregate.overlap_heatmap_json) if latest_report_aggregate.overlap_heatmap_path else None
 
-
-
         sorted_reports = {
-            report_group: ReportList(list(report_group.reports.all())).set_private_reads(report_group).sort_group_by_private_reads()
+            report_group: ReportList(list(report_group.reports.all())).fetch_report_data(report_group).sort_group_by_private_reads()
             for report_group in report_groups
         }
 
@@ -3042,7 +3065,6 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
         }
 
         if latest_report_aggregate.overlap_heatmap_path is not None:
-
             group_map = {}
 
             for taxon_report in report_taxa.values():
@@ -3065,17 +3087,28 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
                     taxon_report['taxon_heatmap_json'] = json.dumps(taxon_report['taxon_heatmap_json'])
 
         report_taxa = list(report_taxa.values())
+        for taxon_report in report_taxa:
+            taxon_report['any_in_control'] = any(
+                report.control_flag == FinalReport.CONTROL_FLAG_PRESENT for report_list in taxon_report['report_groups'].values() for report in report_list
+            )
 
         if any(species is None for species in reported_taxa.values()):
-            report_taxa.append({
+            unassigned = {
                 "species": {"name": "Unassigned", "taxid": None},
                 "report_groups": {
                     rg: sorted_reports[rg] for rg in report_groups if rg.main_species is None
                 },
                 "total_private_counts": sum(
                     rg.private_counts_safe for rg in report_groups if rg.main_species is None
-                )
-            })
+                ),
+                "any_in_control": False
+            }
+            unassigned["any_in_control"] = all(
+                report.control_flag == FinalReport.CONTROL_FLAG_PRESENT for report_list in unassigned['report_groups'].values() for report in report_list
+            )
+            report_taxa.append(unassigned)
+        
+        
         
         report_taxa = sorted(report_taxa, key=lambda x: len(x["report_groups"]), reverse=True)
         report_taxa = sorted(report_taxa, key=lambda x: x["total_private_counts"], reverse=True)
@@ -3086,7 +3119,7 @@ class Sample_ReportCombined(LoginRequiredMixin, generic.CreateView):
 
         #### graph
         graph_progress = TreeProgressGraph(sample)
-        # graph_progress.generate_graph()
+        # 
         graph_json, graph_id = graph_progress.get_graph_data()
 
         ####
@@ -3193,7 +3226,7 @@ class Scaffold_Remap(BaseBreadcrumbMixin, LoginRequiredMixin, generic.CreateView
 
         self.kwargs["sample_name"] = sample.sample.name
         self.kwargs["project_name"] = sample.project.name
-        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.index
+        self.kwargs["run_name"] = run_main_pipeline.parameter_set.leaf.id_str
 
     def get_context_data(self, **kwargs):
         """"""

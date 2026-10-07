@@ -58,7 +58,9 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
     def __init__(self):
         self.dependencies_graph_edges_metagenomics = {
             CS.PIPELINE_NAME_extra_qc: [self.ROOT],
+            CS.PIPELINE_NAME_validation_qc: [self.ROOT],
             CS.PIPELINE_NAME_viral_enrichment: [self.ROOT, CS.PIPELINE_NAME_extra_qc],
+            CS.PIPELINE_NAME_validation_depletion: [self.ROOT, CS.PIPELINE_NAME_validation_qc],
             CS.PIPELINE_NAME_host_depletion: [
                 self.ROOT,
                 CS.PIPELINE_NAME_extra_qc,
@@ -70,9 +72,7 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 CS.PIPELINE_NAME_host_depletion,
                 CS.PIPELINE_NAME_viral_enrichment,
             ],
-
             CS.PIPELINE_NAME_contig_classification: [CS.PIPELINE_NAME_assembly],
-
             CS.PIPELINE_NAME_read_classification: [
                 self.ROOT,
                 CS.PIPELINE_NAME_assembly,
@@ -81,7 +81,6 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
                 CS.PIPELINE_NAME_viral_enrichment,
                 CS.PIPELINE_NAME_host_depletion,
             ],
-
             CS.PIPELINE_NAME_remap_filtering: [
                 CS.PIPELINE_NAME_contig_classification,
                 CS.PIPELINE_NAME_read_classification,
@@ -102,23 +101,20 @@ class Pipeline_Graph_Metagenomics(PipelineTreeBase):
             ],
             self.MAP_FILTERING_SPECIAL_STEP: [
                 self.ROOT,
-                CS.PIPELINE_NAME_extra_qc,
-                CS.PIPELINE_NAME_host_depletion,
-                CS.PIPELINE_NAME_viral_enrichment,
+                CS.PIPELINE_NAME_validation_qc,
+                CS.PIPELINE_NAME_validation_depletion,
             ],
             CS.PIPELINE_NAME_request_mapping: [
                 self.ROOT,
-                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_validation_qc,
                 self.MAP_FILTERING_SPECIAL_STEP,
-                CS.PIPELINE_NAME_host_depletion,
-                CS.PIPELINE_NAME_viral_enrichment,
+                CS.PIPELINE_NAME_validation_depletion,
             ],
             CS.PIPELINE_NAME_metagenomics_screening: [
                 self.ROOT,
-                CS.PIPELINE_NAME_extra_qc,
+                CS.PIPELINE_NAME_validation_qc,
                 self.MAP_FILTERING_SPECIAL_STEP,
-                CS.PIPELINE_NAME_host_depletion,
-                CS.PIPELINE_NAME_viral_enrichment,
+                CS.PIPELINE_NAME_validation_depletion,
             ],
             self.SINK: [
                 CS.PIPELINE_NAME_request_mapping,
@@ -305,7 +301,7 @@ class Pipeline_Makeup(PipelineTreeBase):
 
     def get_pipeline_makeup_result_of_operation(
         self,
-        software,
+        software: Software,
         turn_off=True,
         televir_project: Optional[Projects] = None,
         project_sample: Optional[PIProject_Sample] = None,
@@ -321,6 +317,8 @@ class Pipeline_Makeup(PipelineTreeBase):
             pipeline_steps_project = self.get_software_pipeline_list_including(
                 software, televir_project=televir_project, project_sample=project_sample
             )
+        
+        pipeline_steps = CS.match_pipeline_type(software.pipeline_step.name)
 
-        return pipeline_steps_project
+        return pipeline_steps
 

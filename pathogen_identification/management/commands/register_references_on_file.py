@@ -132,7 +132,7 @@ class Command(BaseCommand):
 
             # entrez direct interface
             entrez_connection = EntrezWrapper(
-                user.username,
+                user,
                 bindir=metadadata_constants.get_software_bin_directory("entrez_direct"),
                 outdir=outdir,
                 outfile="entrez_output.tsv",
